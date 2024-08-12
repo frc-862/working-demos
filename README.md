@@ -1,15 +1,12 @@
-# working-demos
+# eddie
 
-This repository is to serve all our working demo code. <br>
-Each branch should work OOB (out of box).<br>
-There should be minimal changes to any robots.
+BOT RIO 2023.3.2 (NEEDS UPDATING)
+CODE RIO 2024.3.1
 
-### Current Robots:
-- Orion
-- Sparkplug
+## Controls
+### Flightsticks (Ports 0, 1)
+- Sticks up/down: drive
 
-### TODO:
-- Void
-- Greg
-- Eddie
-- Rhapsody
+### XBox (Port 2)
+- Left/Right Bumpers: Indexer
+- A: Auto Shoot
