@@ -6,10 +6,10 @@ There should be minimal changes to any robots.
 
 ### Current Robots:
 - Orion
+- Eddie
 - Sparkplug
 
 ### TODO:
 - Void
 - Greg
-- Eddie
 - Rhapsody
