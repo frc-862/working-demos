@@ -22,8 +22,6 @@ import frc.robot.Constants.RobotMap;
 
 public class Shooter extends SubsystemBase {
 
-    // public static Compressor compressor = new Compressor(PneumaticsModuleType.CTREPCM);
-
     private TalonSRX topMotor;
     private TalonSRX bottomMotor;
 
@@ -48,9 +46,9 @@ public class Shooter extends SubsystemBase {
 
         bottomMotor.follow(topMotor);
 
-        LightningShuffleboard.setDoubleSupplier("Shooter", "Top Motor", () -> topMotor.getMotorOutputPercent());
-        LightningShuffleboard.setDoubleSupplier("Shooter", "Bottom Motor", () -> bottomMotor.getMotorOutputPercent());
-        LightningShuffleboard.setBoolSupplier("Shooter", "Piece Mover", () -> pieceMover.get() == Value.kForward);
+        LightningShuffleboard.setDoubleSupplier("Shooter", "Top Power", () -> topMotor.getMotorOutputPercent());
+        LightningShuffleboard.setDoubleSupplier("Shooter", "Bottom Power", () -> bottomMotor.getMotorOutputPercent());
+        LightningShuffleboard.setBoolSupplier("Shooter", "Is Shooting", () -> pieceMover.get() == Value.kForward);
     }
 
     public void setPower(double power) {
@@ -75,6 +73,6 @@ public class Shooter extends SubsystemBase {
 
     @Override
     public void periodic() {
-        this.demoLimit = LightningShuffleboard.getDouble("Shooter", "Demo Limit", this.demoLimit);
+        this.demoLimit = LightningShuffleboard.getDouble("Demo", "Shooter Limit", this.demoLimit);
     }
 }
