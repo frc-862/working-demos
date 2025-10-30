@@ -4,15 +4,14 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.TimedRobot;
 import frc.util.LightningRobot;
 import frc.util.shuffleboard.LightningShuffleboard;
 
-public class Robot extends TimedRobot {
+public class Robot extends LightningRobot {
 
     @SuppressWarnings("resource")
     public Robot() {
-        new LightningRobot(new RobotContainer());
+        super(new RobotContainer());
     }
 
     @Override
