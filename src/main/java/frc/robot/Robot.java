@@ -4,12 +4,15 @@
 
 package frc.robot;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.networktables.StringPublisher;
 import frc.util.LightningRobot;
-import frc.util.shuffleboard.LightningShuffleboard;
 
 public class Robot extends LightningRobot {
 
-    @SuppressWarnings("resource")
+    private final StringPublisher instructionsPublisher = 
+        NetworkTableInstance.getDefault().getTable("Demo").getStringTopic("Instructions").publish();
+
     public Robot() {
         super(new RobotContainer());
     }
@@ -18,11 +21,7 @@ public class Robot extends LightningRobot {
     public void robotInit() {
         super.robotInit();
 
-        LightningShuffleboard.setString("Demo", "Instructions", "Copilot triggers control shooter power. " 
-            + "X/B control collector. Y/A control indexer.");
-
-        LightningShuffleboard.setDouble("Demo", "Shooter Power Multiplier", 0.4);
-        LightningShuffleboard.setDouble("Demo", "Drive Multiplier", 0.4);
+        instructionsPublisher.accept("Copilot triggers control shooter power. X/B control collector. Y/A control indexer.");
     }
 
 }

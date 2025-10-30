@@ -9,7 +9,9 @@ import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 import frc.util.LightningContainer;
-import frc.util.shuffleboard.LightningShuffleboard;
+
+import edu.wpi.first.networktables.DoubleSubscriber;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -24,6 +26,11 @@ public class RobotContainer extends LightningContainer {
     private XboxController driver = new XboxController(RobotMap.DRIVER_PORT);
     private XboxController copilot = new XboxController(RobotMap.COPILOT_PORT);
 
+    private final DoubleSubscriber shooterPowerMultiplier = 
+        NetworkTableInstance.getDefault().getTable("Demo").getDoubleTopic("Shooter Power Multiplier").subscribe(0.4);
+    private final DoubleSubscriber driveMultiplier = 
+        NetworkTableInstance.getDefault().getTable("Demo").getDoubleTopic("Drive Multiplier").subscribe(0.4);
+
     @Override
     protected void initializeSubsystems() {
         collector = new Collector();
@@ -35,7 +42,7 @@ public class RobotContainer extends LightningContainer {
     protected void configureDefaultCommands() {
         // Set the default command for the shooter to be controlled by the copilot's triggers
         shooter.setDefaultCommand(shooter.applyPower(() -> (copilot.getRightTriggerAxis() - copilot.getLeftTriggerAxis())
-            * LightningShuffleboard.getDouble("Demo", "Shooter Power Multiplier", 0.4)));
+            * shooterPowerMultiplier.get()));
     }
 
     @Override
