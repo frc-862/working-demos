@@ -35,16 +35,16 @@ public class RobotContainer extends LightningContainer {
     protected void configureDefaultCommands() {
         // Set the default command for the shooter to be controlled by the copilot's triggers
         shooter.setDefaultCommand(shooter.applyPower(() -> (copilot.getRightTriggerAxis() - copilot.getLeftTriggerAxis())
-            * LightningShuffleboard.getDouble("Shooter", "Shooter Power Multiplier", 0.4)));
+            * LightningShuffleboard.getDouble("Demo", "Shooter Power Multiplier", 0.4)));
     }
 
     @Override
     protected void configureButtonBindings() {
         // Collector and Indexer controls
-        new Trigger(copilot::getXButton).onTrue(collector.applyPower(1.0)).onFalse(collector.applyPower(0.0));
-        new Trigger(copilot::getBButton).onTrue(collector.applyPower(-1.0)).onFalse(collector.applyPower(0.0));
+        new Trigger(copilot::getXButton).onTrue(collector.applyPower(-1.0)).onFalse(collector.applyPower(0.0));
+        new Trigger(copilot::getBButton).onTrue(collector.applyPower(1.0)).onFalse(collector.applyPower(0.0));
 
-        new Trigger(copilot::getYButton).onTrue(indexer.applyPower(1.0)).onFalse(indexer.applyPower(0.0));
+        new Trigger(copilot::getYButton).onTrue(indexer.applyPower(-1.0)).onFalse(indexer.applyPower(0.0));
         new Trigger(copilot::getAButton).onTrue(indexer.applyPower(1.0)).onFalse(indexer.applyPower(0.0));
     }
 
