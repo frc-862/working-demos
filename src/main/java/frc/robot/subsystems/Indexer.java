@@ -8,6 +8,7 @@ import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
 
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.IndexerConstants;
@@ -17,12 +18,18 @@ import frc.util.hardware.ThunderBird;
 public class Indexer extends SubsystemBase {
     
     private ThunderBird indexerMotor;
+    private DigitalInput collectorBeamBreak;
+    private DigitalInput shooterBeamBreak;
     private final DutyCycleOut indexerDutyCycle = new DutyCycleOut(0d);
 
     public Indexer() {
         // Initialize the indexer motor with its configuration
         indexerMotor = new ThunderBird(RobotMap.INDEXER_MOTOR_ID, RobotMap.CANIVORE_CAN_NAME,
             IndexerConstants.INVERT, IndexerConstants.STATOR_LIMIT, IndexerConstants.BRAKE_MODE);
+
+        // initialize beam breaks
+        collectorBeamBreak = new DigitalInput(RobotMap.COLLECTOR_BEAM_BREAK);
+        shooterBeamBreak = new DigitalInput(RobotMap.SHOOTER_BEAM_BREAK);
     }
 
     /**
@@ -47,5 +54,13 @@ public class Indexer extends SubsystemBase {
      */
     public Command applyPower(DoubleSupplier power){
         return run(() -> setPower(power.getAsDouble()));
+    }
+
+    public boolean getCollectorBeamBreak() {
+        return collectorBeamBreak.get();
+    }
+
+    public boolean getShooterBeamBreak() {
+        return shooterBeamBreak.get();
     }
 }

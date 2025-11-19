@@ -21,7 +21,8 @@ public class Robot extends LightningRobot {
     public void robotInit() {
         super.robotInit();
 
-        instructionsPublisher.accept("Copilot triggers control shooter power. X/B control collector. Y/A control indexer.");
+        instructionsPublisher.accept("Copilot: triggers control shooter power. X/B control collector. Y/A control indexer. "
+            + "Left bumper for smart collect. Drive: left trigger for robot-centric drive. Start and Back to reset field forward.");
     }
 
 }

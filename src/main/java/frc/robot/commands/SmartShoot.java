@@ -1,0 +1,66 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.commands;
+
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.function.DoubleSupplier;
+
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.ShooterConstants;
+import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Shooter;
+
+public class SmartShoot extends Command {
+
+    Indexer indexer;
+    Shooter shooter;
+
+    DoubleSupplier shooterPower;
+    boolean isShooting;
+    
+    public SmartShoot(Indexer indexer, Shooter shooter, DoubleSupplier shooterPower) {
+        this.indexer = indexer;
+        this.shooter = shooter;
+        this.shooterPower = shooterPower;
+
+        addRequirements(indexer, shooter);
+    }
+
+    @Override
+    public void initialize() {
+
+        isShooting = false;
+
+        // wait for shooter to spin up before starting indexer
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run(){
+                indexer.setPower(IndexerConstants.DEFAULT_POWER);
+            }
+         }, ShooterConstants.SHOOT_DELAY);
+    }
+
+    @Override
+    public void execute() {
+        shooter.setPower(shooterPower.getAsDouble());
+
+        if (!isShooting && indexer.getShooterBeamBreak()) {
+            isShooting = true;
+        }
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        shooter.setPower(0.0);
+        indexer.setPower(0.0);
+    }
+
+    @Override
+    public boolean isFinished() {
+        return isShooting && !indexer.getShooterBeamBreak();
+    }
+}
