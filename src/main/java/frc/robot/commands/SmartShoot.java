@@ -16,11 +16,11 @@ import frc.robot.subsystems.Shooter;
 
 public class SmartShoot extends Command {
 
-    Indexer indexer;
-    Shooter shooter;
+    protected Indexer indexer;
+    protected Shooter shooter;
 
-    DoubleSupplier shooterPower;
-    boolean isShooting;
+    protected DoubleSupplier shooterPower;
+    protected boolean isShooting;
     
     public SmartShoot(Indexer indexer, Shooter shooter, DoubleSupplier shooterPower) {
         this.indexer = indexer;
