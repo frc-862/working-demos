@@ -10,12 +10,17 @@ import frc.robot.Constants.DrivetrainConstants.DriveRequests;
 import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
 import frc.robot.Constants.IndexerConstants;
+import frc.robot.Constants.LEDConstants;
+import frc.robot.Constants.LEDConstants.LED_STATES;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Swerve;
 import frc.util.LightningContainer;
+import frc.util.leds.Color;
+import frc.util.leds.LEDBehaviorFactory;
+import frc.util.leds.LEDSubsystem;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -30,28 +35,34 @@ public class RobotContainer extends LightningContainer {
     private Indexer indexer;
     private Shooter shooter;
     private Swerve  drivetrain;
+    private LEDSubsystem leds;
 
     private XboxController driver;
     private XboxController copilot;
 
     private XboxController storedCopilot;
 
-    private final DoubleSubscriber shooterPowerMultiplier = 
-        NetworkTableInstance.getDefault().getTable("Demo").getDoubleTopic("Shooter Power Multiplier").subscribe(0.4);
-    private final DoubleSubscriber driveMultiplier = 
-        NetworkTableInstance.getDefault().getTable("Demo").getDoubleTopic("Drive Multiplier").subscribe(0.4);
-    private final BooleanSubscriber useSingleController = 
-        NetworkTableInstance.getDefault().getTable("Demo").getBooleanTopic("Use Single Controller").subscribe(false);
+    private DoubleSubscriber shooterPowerMultiplier;
+    private DoubleSubscriber driveMultiplier;
+    private BooleanSubscriber useSingleController;
 
     @Override
-    protected void initializeSubsystems() {
+    protected void initializeHardware() {
         collector = new Collector();
         indexer = new Indexer();
         shooter = new Shooter();
+        leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_LENGTH, LEDConstants.LED_PWM_PORT);
 
         driver = new XboxController(ControllerConstants.DRIVER);
         copilot = new XboxController(ControllerConstants.COPILOT);
         storedCopilot = copilot;
+
+        shooterPowerMultiplier = NetworkTableInstance.getDefault().getTable("Demo")
+            .getDoubleTopic("Shooter Power Multiplier").subscribe(0.4);
+        driveMultiplier = NetworkTableInstance.getDefault().getTable("Demo")
+            .getDoubleTopic("Drive Multiplier").subscribe(0.4);
+        useSingleController = NetworkTableInstance.getDefault().getTable("Demo")
+            .getBooleanTopic("Use Single Controller").subscribe(false);
     }
 
     @Override
@@ -101,6 +112,22 @@ public class RobotContainer extends LightningContainer {
         // switch to single controller mode when enabled
         new Trigger(useSingleController::get).onTrue(new InstantCommand(() -> copilot = driver))
             .onFalse(new InstantCommand(() -> copilot = storedCopilot));
+    }
+
+    @Override
+    protected void configureLEDs() {
+        leds.setDefaultBehavior(LEDBehaviorFactory.SwirlBehabior(LEDConstants.allLEDs, 10, 5, Color.BLUE, Color.ORANGE));
+
+		leds.setBehavior(LED_STATES.A.ID(), LEDBehaviorFactory.BlinkColorBehavior(LEDConstants.strip1, 4,  Color.YELLOW)); 
+		leds.setBehavior(LED_STATES.B.ID(), LEDBehaviorFactory.pulseColorBehavior(LEDConstants.strip2, 1, Color.PINK)); 
+		leds.setBehavior(LED_STATES.X.ID(), LEDBehaviorFactory.RainbowBehavior(LEDConstants.strip3, 1));
+		leds.setBehavior(LED_STATES.Y.ID(), LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip4, Color.GREEN));
+		leds.setBehavior(LED_STATES.AUTO.ID(), LEDBehaviorFactory.RainbowBehavior(LEDConstants.allLEDs, 3));
+		leds.setBehavior(LED_STATES.TEST.ID(), LEDBehaviorFactory.TestStripBehavior(34, 
+			() -> driver.getAButton(),
+			() -> driver.getBButton(), 
+			() -> driver.getXButton(), 
+			() -> driver.getYButton()));
     }
 
     @Override
