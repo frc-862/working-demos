@@ -17,22 +17,22 @@ import frc.util.hardware.ThunderBird;
 
 public class Shooter extends SubsystemBase {
 
-    private ThunderBird shooterMotorOne;
-    private ThunderBird shooterMotorTwo;
+    private ThunderBird shooterMotorBottom;
+    private ThunderBird shooterMotorTop;
 
     private DutyCycleOut shooterDutyCycle = new DutyCycleOut(0d);
     
     public Shooter() {
 
         // Initialize the shooter motors with their configuration
-        shooterMotorOne = new ThunderBird(RobotMap.SHOOTER_ONE_MOTOR_ID, RobotMap.CANIVORE_CAN_NAME,
+        shooterMotorBottom = new ThunderBird(RobotMap.SHOOTER_MOTOR_BOTTOM_ID, RobotMap.CANIVORE_CAN_NAME,
             ShooterConstants.INVERT, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
 
-        shooterMotorTwo = new ThunderBird(RobotMap.SHOOTER_TWO_MOTOR_ID, RobotMap.CANIVORE_CAN_NAME,
+        shooterMotorTop = new ThunderBird(RobotMap.SHOOTER_MOTOR_TOP_ID, RobotMap.CANIVORE_CAN_NAME,
             ShooterConstants.INVERT, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
 
         // Set motor two to follow motor one
-        shooterMotorTwo.setControl(new Follower(RobotMap.SHOOTER_ONE_MOTOR_ID, ShooterConstants.MOTOR_TWO_OPPOSE_MASTER_DIRECTION));
+        shooterMotorTop.setControl(new Follower(RobotMap.SHOOTER_MOTOR_BOTTOM_ID, ShooterConstants.MOTOR_TWO_OPPOSE_MASTER_DIRECTION));
     }
 
     /**
@@ -40,7 +40,7 @@ public class Shooter extends SubsystemBase {
      * @param power
      */
     public void setPower(double power) {
-        shooterMotorOne.setControl(shooterDutyCycle.withOutput(power));
+        shooterMotorBottom.setControl(shooterDutyCycle.withOutput(power));
     }
 
     /**

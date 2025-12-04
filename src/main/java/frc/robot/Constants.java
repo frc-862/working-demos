@@ -52,8 +52,8 @@ public final class Constants {
         // Motor CAN IDs
         public static final int COLLECTOR_MOTOR_ID = 9;
         public static final int INDEXER_MOTOR_ID = 10;
-        public static final int SHOOTER_ONE_MOTOR_ID = 11;
-        public static final int SHOOTER_TWO_MOTOR_ID = 12;
+        public static final int SHOOTER_MOTOR_BOTTOM_ID = 11;
+        public static final int SHOOTER_MOTOR_TOP_ID = 12;
 
         public static final String CANIVORE_CAN_NAME = "Canivore";
 
@@ -69,7 +69,7 @@ public final class Constants {
     }
 
     public static class ShooterConstants {
-        public static final boolean MOTOR_TWO_OPPOSE_MASTER_DIRECTION = false;
+        public static final boolean MOTOR_TWO_OPPOSE_MASTER_DIRECTION = true;
 
         public static final double STATOR_LIMIT = 60;
         public static final boolean INVERT = false;
@@ -77,7 +77,7 @@ public final class Constants {
 
         public static final long SHOOT_DELAY = 2000; // milliseconds
 
-        public static final double COAST_POWER = -0.1;
+        public static final double COAST_POWER = 0;
     }
 
     public static class IndexerConstants {
@@ -376,6 +376,7 @@ public final class Constants {
         public enum LED_STATES {
             TEST,
             AUTO,
+            SHOOT,
             A,
             B,
             X,

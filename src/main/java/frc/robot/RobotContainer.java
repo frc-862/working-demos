@@ -6,6 +6,7 @@ package frc.robot;
 
 import frc.robot.Constants.CollectorConstants;
 import frc.robot.Constants.ControllerConstants;
+import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.Constants.DrivetrainConstants.DriveRequests;
 import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
@@ -21,6 +22,7 @@ import frc.util.LightningContainer;
 import frc.util.leds.Color;
 import frc.util.leds.LEDBehaviorFactory;
 import frc.util.leds.LEDSubsystem;
+
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.networktables.NetworkTableInstance;
@@ -52,6 +54,7 @@ public class RobotContainer extends LightningContainer {
         indexer = new Indexer();
         shooter = new Shooter();
         leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_LENGTH, LEDConstants.LED_PWM_PORT);
+        drivetrain = DrivetrainConstants.TunerConstants.createDrivetrain();
 
         driver = new XboxController(ControllerConstants.DRIVER);
         copilot = new XboxController(ControllerConstants.COPILOT);
@@ -80,25 +83,25 @@ public class RobotContainer extends LightningContainer {
     @Override
     protected void configureButtonBindings() {
         // Collector, shooter, and Indexer manual controls
-        new Trigger(copilot::getXButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
+        new Trigger(copilot::getXButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
             .onFalse(collector.applyPower(0.0));
-        new Trigger(copilot::getBButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
+        new Trigger(copilot::getBButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
             .onFalse(collector.applyPower(0.0));
 
-        new Trigger(copilot::getYButton).onTrue(indexer.applyPower(-IndexerConstants.DEFAULT_POWER))
+        new Trigger(copilot::getYButton).onTrue(indexer.applyPower(IndexerConstants.DEFAULT_POWER))
             .onFalse(indexer.applyPower(0.0));
-        new Trigger(copilot::getAButton).onTrue(indexer.applyPower(IndexerConstants.DEFAULT_POWER))
+        new Trigger(copilot::getAButton).onTrue(indexer.applyPower(-IndexerConstants.DEFAULT_POWER))
             .onFalse(indexer.applyPower(0.0));
 
         new Trigger(() -> (getCopilotTriggerDifference() > ControllerConstants.DEADBAND))
-            .whileTrue(shooter.applyPower(() -> getCopilotTriggerDifference() * shooterPowerMultiplier.get()));
+            .whileTrue(shooter.applyPower(() -> copilot.getRightTriggerAxis() - copilot.getLeftTriggerAxis() * shooterPowerMultiplier.get()).deadlineFor(leds.setState(LED_STATES.SHOOT.ID())));
 
         // collector, indexer, and shooter smart controls
         new Trigger(() -> copilot.getLeftBumperButton()).whileTrue(new SmartCollect(indexer, collector));
         new Trigger(() -> copilot.getRightBumperButton()).whileTrue(new ExtraSmartShoot(indexer, shooter, 
             () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get()));
 
-        // robot-centric driving while left trigger is held
+        // robot-centric driving while left trigger ][\is held
         new Trigger(() -> driver.getLeftTriggerAxis() > ControllerConstants.DEADBAND).whileTrue(
             drivetrain.applyRequest(DriveRequests.getRobotCentric(() -> -driver.getLeftX() * driveMultiplier.get(), 
             () -> -driver.getLeftY() * driveMultiplier.get(), () -> -driver.getRightX() * driveMultiplier.get())));
@@ -122,6 +125,7 @@ public class RobotContainer extends LightningContainer {
 		leds.setBehavior(LED_STATES.B.ID(), LEDBehaviorFactory.pulseColorBehavior(LEDConstants.strip2, 1, Color.PINK)); 
 		leds.setBehavior(LED_STATES.X.ID(), LEDBehaviorFactory.RainbowBehavior(LEDConstants.strip3, 1));
 		leds.setBehavior(LED_STATES.Y.ID(), LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip4, Color.GREEN));
+        leds.setBehavior(LED_STATES.SHOOT.ID(), LEDBehaviorFactory.pulseColorBehavior(LEDConstants.allLEDs, 8, Color.WHITE));
 		leds.setBehavior(LED_STATES.AUTO.ID(), LEDBehaviorFactory.RainbowBehavior(LEDConstants.allLEDs, 3));
 		leds.setBehavior(LED_STATES.TEST.ID(), LEDBehaviorFactory.TestStripBehavior(34, 
 			() -> driver.getAButton(),
@@ -140,6 +144,6 @@ public class RobotContainer extends LightningContainer {
 
     private double getCopilotTriggerDifference() {
         // left trigger is disabled when in single controller mode
-        return (copilot.getRightTriggerAxis() - (useSingleController.get() ? 0 : driver.getLeftTriggerAxis()));
+        return (copilot.getRightTriggerAxis() - (useSingleController.get() ? 0 : copilot.getLeftTriggerAxis()));
     }
 }
