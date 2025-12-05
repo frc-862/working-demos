@@ -69,15 +69,16 @@ public final class Constants {
     }
 
     public static class ShooterConstants {
-        public static final boolean MOTOR_TWO_OPPOSE_MASTER_DIRECTION = true;
+        // public static final boolean MOTOR_TWO_OPPOSE_MASTER_DIRECTION = true;
 
         public static final double STATOR_LIMIT = 60;
-        public static final boolean INVERT = false;
+        public static final boolean INVERT_TOP_MOTOR = false;
+        public static final boolean INVERT_BOTTOM_MOTOR = true;
         public static final boolean BRAKE_MODE = false;
 
         public static final long SHOOT_DELAY = 2000; // milliseconds
 
-        public static final double COAST_POWER = 0;
+        public static final double COAST_POWER = -0.1;
     }
 
     public static class IndexerConstants {
@@ -353,6 +354,8 @@ public final class Constants {
                 return () -> BRAKE;
             }
         }
+
+        public static final double SLOWMODE_MULTIPLIER = 0.4;
     }
 
     public static class LEDConstants {
@@ -376,11 +379,8 @@ public final class Constants {
         public enum LED_STATES {
             TEST,
             AUTO,
-            SHOOT,
-            A,
-            B,
-            X,
-            Y;
+            SHOOTING,
+            COLLECTING;
 
             public int ID() {
                 return this.ordinal();

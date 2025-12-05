@@ -7,7 +7,6 @@ package frc.robot.subsystems;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.controls.DutyCycleOut;
-import com.ctre.phoenix6.controls.Follower;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -20,27 +19,50 @@ public class Shooter extends SubsystemBase {
     private ThunderBird shooterMotorBottom;
     private ThunderBird shooterMotorTop;
 
-    private DutyCycleOut shooterDutyCycle = new DutyCycleOut(0d);
+    private DutyCycleOut shooterDutyCycle;
     
     public Shooter() {
 
         // Initialize the shooter motors with their configuration
         shooterMotorBottom = new ThunderBird(RobotMap.SHOOTER_MOTOR_BOTTOM_ID, RobotMap.CANIVORE_CAN_NAME,
-            ShooterConstants.INVERT, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
+            ShooterConstants.INVERT_TOP_MOTOR, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
 
         shooterMotorTop = new ThunderBird(RobotMap.SHOOTER_MOTOR_TOP_ID, RobotMap.CANIVORE_CAN_NAME,
-            ShooterConstants.INVERT, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
+            ShooterConstants.INVERT_BOTTOM_MOTOR, ShooterConstants.STATOR_LIMIT, ShooterConstants.BRAKE_MODE);
+
+            shooterDutyCycle = new DutyCycleOut(0d);
 
         // Set motor two to follow motor one
-        shooterMotorTop.setControl(new Follower(RobotMap.SHOOTER_MOTOR_BOTTOM_ID, ShooterConstants.MOTOR_TWO_OPPOSE_MASTER_DIRECTION));
+        // shooterMotorTop.setControl(new Follower(RobotMap.SHOOTER_MOTOR_BOTTOM_ID, ShooterConstants.MOTOR_TWO_OPPOSE_MASTER_DIRECTION));
     }
 
     /**
      * sets the power for the shooter motors
      * @param power
      */
-    public void setPower(double power) {
+    public void setPowerTop(double power) {
+        shooterMotorTop.setControl(shooterDutyCycle.withOutput(power));
+    }
+
+    /**
+     * sets the power for the shooter motors
+     * @param power
+     */
+    public void setPowerBottom(double power) {
         shooterMotorBottom.setControl(shooterDutyCycle.withOutput(power));
+    }
+
+    // public double getRPM() {
+    //     return shooterMotorTop.getVelocity().getValue().magnitude();
+    // }
+
+    public void setPower(double power) {
+        setPower(power, power);
+    }
+    
+    public void setPower(double powerTop, double powerBottom) {
+        setPowerTop(powerTop);
+        setPowerBottom(powerBottom);
     }
 
     /**
@@ -48,7 +70,22 @@ public class Shooter extends SubsystemBase {
      * @return instantCommand that sets the power
      */
     public Command applyPower(double power) {
-        return runOnce(() -> setPower(power));
+        return runOnce(() -> {
+            setPowerTop(power);
+            setPowerBottom(power);
+        });
+    }
+
+    /**
+     * @param powerTop
+     * @param powerBottom
+     * @return instantCommand that sets the power
+     */
+    public Command applyPower(double powerTop, double powerBottom) {
+        return runOnce(() -> {
+            setPowerTop(powerTop);
+            setPowerBottom(powerBottom);
+        });
     }
 
     /**
@@ -56,6 +93,22 @@ public class Shooter extends SubsystemBase {
      * @return runCommand that sets the power
      */
     public Command applyPower(DoubleSupplier power){
-        return run(() -> setPower(power.getAsDouble()));
+        return run(() -> {
+            setPowerTop(power.getAsDouble());
+            setPowerBottom(power.getAsDouble());
+        });
     }
+
+    /**
+     * @param powerTop
+     * @param powerBottom
+     * @return runCommand that sets the power
+     */
+    public Command applyPower(DoubleSupplier powerTop, DoubleSupplier powerBottom){
+        return run(() -> {
+            setPowerTop(powerTop.getAsDouble());
+            setPowerBottom(powerBottom.getAsDouble());
+        });
+    }
+    
 }

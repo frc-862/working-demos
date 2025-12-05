@@ -40,6 +40,14 @@ public class Indexer extends SubsystemBase {
         indexerMotor.setControl(indexerDutyCycle.withOutput(power));
     }
 
+    public void stop() {
+        indexerMotor.setControl(indexerDutyCycle.withOutput(0));
+    }
+
+    public Command applyStop() {
+        return runOnce(() -> stop());
+    }
+
     /**
      * @param power
      * @return instantCommand that sets the power
