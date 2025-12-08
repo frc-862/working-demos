@@ -8,11 +8,11 @@ import frc.robot.Constants.CollectorConstants;
 import frc.robot.Constants.ControllerConstants;
 import frc.robot.Constants.DrivetrainConstants;
 import frc.robot.Constants.DrivetrainConstants.DriveRequests;
-import frc.robot.commands.ExtraSmartShoot;
-import frc.robot.commands.SmartCollect;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.LEDConstants.LED_STATES;
+import frc.robot.commands.SmartCollect;
+import frc.robot.commands.SmartShoot;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -29,7 +29,6 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RobotContainer extends LightningContainer {
@@ -51,12 +50,14 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected void initializeHardware() {
+        drivetrain = DrivetrainConstants.TunerConstants.createDrivetrain();
+        
         collector = new Collector();
         indexer = new Indexer();
         shooter = new Shooter();
-        leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_LENGTH, LEDConstants.LED_PWM_PORT);
-        drivetrain = DrivetrainConstants.TunerConstants.createDrivetrain();
 
+        leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_LENGTH, LEDConstants.LED_PWM_PORT);
+        
         driver = new XboxController(ControllerConstants.DRIVER);
         copilot = new XboxController(ControllerConstants.COPILOT);
         storedCopilot = copilot;
@@ -69,58 +70,57 @@ public class RobotContainer extends LightningContainer {
     @Override
     protected void configureDefaultCommands() {
         
-        // Set the default command for the drivetrain to be controlled by the driver's joysticks
+        // default drive
         drivetrain.setDefaultCommand(drivetrain.applyRequest(DriveRequests.getDrive(
             () -> -driver.getLeftX() * driveMultiplier.get(), 
             () -> -driver.getLeftY() * driveMultiplier.get(), 
             () -> -driver.getRightX() * driveMultiplier.get())));
 
-        // coast shooter when not being used
+        // coast shooter in
         shooter.setDefaultCommand(shooter.applyPower(() -> ShooterConstants.COAST_POWER));
 
-        leds.setDefaultCommand(new RunCommand(() -> System.out.println(driveMultiplier.get()), leds));
     }
 
     @Override
     protected void configureButtonBindings() {
-        // Collector, shooter, and Indexer manual controls
-        // new Trigger(copilot::getXButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
-        //     .onFalse(collector.applyPower(0.0));
-        // new Trigger(copilot::getBButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
-        //     .onFalse(collector.applyPower(0.0));
-
-        // new Trigger(copilot::getYButton).onTrue(indexer.applyPower(IndexerConstants.DEFAULT_POWER))
-        //     .onFalse(indexer.applyPower(0.0));
-        // new Trigger(copilot::getAButton).onTrue(indexer.applyPower(-IndexerConstants.DEFAULT_POWER))
-        //     .onFalse(indexer.applyPower(0.0));
-
+        // demo collect & index
         new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER).alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
             .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
-            .whileTrue(leds.setState(LED_STATES.COLLECTING.ID()));
+            .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
         new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER).alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
             .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
-            .whileTrue(leds.setState(LED_STATES.COLLECTING.ID()));
+            .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
+        // demo shoot
         new Trigger(() -> Math.abs(getCopilotTriggerDifference()) > ControllerConstants.DEADBAND)
-            .whileTrue(shooter.applyPower(() -> getCopilotTriggerDifference() * shooterPowerMultiplier.get()).deadlineFor(leds.setState(LED_STATES.SHOOTING.ID())));
+            .whileTrue(shooter.applyPower(() -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
+            .deadlineFor(leds.enableState(LED_STATES.SHOOTING.ID())));
+        
+        // Smart Collect
+        new Trigger(copilot::getAButton)
+            .whileTrue(new SmartCollect(indexer, collector)
+            .onSuccess(leds.enableStateWithTimeout(LED_STATES.COLLECTED.ID(), 5)));
 
-        // collector, indexer, and shooter smart controls
-        // new Trigger(() -> copilot.getLeftBumperButton()).whileTrue(new SmartCollect(indexer, collector));
-        // new Trigger(() -> copilot.getRightBumperButton()).whileTrue(new ExtraSmartShoot(indexer, shooter, 
-        //     () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get()));
+        // Smart shoot
+        new Trigger(copilot::getBButton)
+            .whileTrue(new SmartShoot(indexer, shooter, () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
+            .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5)));
 
-        // robot-centric driving while left trigger is held
+        // robot-centric
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(
-            drivetrain.applyRequest(DriveRequests.getRobotCentric(() -> -driver.getLeftX() * driveMultiplier.get(), 
-            () -> -driver.getLeftY() * driveMultiplier.get(), () -> -driver.getRightX() * driveMultiplier.get())));
+            drivetrain.applyRequest(DriveRequests.getRobotCentric(
+                () -> -driver.getLeftX() * driveMultiplier.get(), 
+                () -> -driver.getLeftY() * driveMultiplier.get(), 
+                () -> -driver.getRightX() * driveMultiplier.get())));
 
-        // brake
-        new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));
-
-        new Trigger(driver::getBButton).whileTrue(drivetrain.applyRequest(DriveRequests.getDrive(
+        // slowmode
+        new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getDrive(
             () -> -driver.getLeftX() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER, 
             () -> -driver.getLeftY() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER, 
             () -> -driver.getRightX() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER)));
+
+        // brake
+        new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));
 
         // reset field forward
         new Trigger(() -> driver.getStartButton() && driver.getBackButton()).onTrue(drivetrain.commandResetFieldForward());
@@ -143,9 +143,9 @@ public class RobotContainer extends LightningContainer {
 			() -> driver.getXButton(), 
 			() -> driver.getYButton()));
 
-        new Trigger(DriverStation::isTest).whileTrue(leds.setState(LED_STATES.TEST.ID()));
+        new Trigger(DriverStation::isTest).whileTrue(leds.enableState(LED_STATES.TEST.ID()));
 
-        new Trigger(() -> DriverStation.isAutonomous() && DriverStation.isEnabled()).whileTrue(leds.setState(LED_STATES.AUTO.ID()));
+        new Trigger(() -> DriverStation.isAutonomous() && DriverStation.isEnabled()).whileTrue(leds.enableState(LED_STATES.AUTO.ID()));
     }
 
     @Override

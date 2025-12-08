@@ -8,13 +8,13 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.function.DoubleSupplier;
 
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
+import frc.util.leds.LEDCommand;
 
-public class SmartShoot extends Command {
+public class SmartShoot extends LEDCommand {
 
     protected Indexer indexer;
     protected Shooter shooter;
