@@ -379,6 +379,9 @@ public final class Constants {
         public enum LED_STATES {
             TEST,
             AUTO,
+            SINGLE_CONTROLLER,
+            COLLECTED,
+            SHOT,
             SHOOTING,
             COLLECTING;
 

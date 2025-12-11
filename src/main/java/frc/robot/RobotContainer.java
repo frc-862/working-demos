@@ -11,6 +11,7 @@ import frc.robot.Constants.DrivetrainConstants.DriveRequests;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.LEDConstants.LED_STATES;
+import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
 import frc.robot.commands.SmartShoot;
 import frc.robot.Constants.ShooterConstants;
@@ -99,12 +100,19 @@ public class RobotContainer extends LightningContainer {
         // Smart Collect
         new Trigger(copilot::getAButton)
             .whileTrue(new SmartCollect(indexer, collector)
-            .onSuccess(leds.enableStateWithTimeout(LED_STATES.COLLECTED.ID(), 5)));
+            .onSuccess(leds.enableStateWithTimeout(LED_STATES.COLLECTED.ID(), 5))
+            .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 
         // Smart shoot
-        new Trigger(copilot::getBButton)
-            .whileTrue(new SmartShoot(indexer, shooter, () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
-            .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5)));
+        // new Trigger(copilot::getBButton)
+        //     .whileTrue(new SmartShoot(indexer, shooter, () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
+        //     .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
+        //     .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
+
+        new Trigger(copilot::getXButton)
+            .whileTrue(new ExtraSmartShoot(indexer, shooter, 0.5 * shooterPowerMultiplier.get())
+            .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
+            .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 
         // robot-centric
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(
@@ -126,16 +134,24 @@ public class RobotContainer extends LightningContainer {
         new Trigger(() -> driver.getStartButton() && driver.getBackButton()).onTrue(drivetrain.commandResetFieldForward());
 
         // switch to single controller mode when enabled
-        new Trigger(useSingleController::get).onTrue(new InstantCommand(() -> copilot = driver))
-            .onFalse(new InstantCommand(() -> copilot = storedCopilot));
+        new Trigger(useSingleController::get)
+            .onTrue(new InstantCommand(() -> copilot = driver))
+            .onFalse(new InstantCommand(() -> copilot = storedCopilot))
+            .whileTrue(leds.enableState(LED_STATES.SINGLE_CONTROLLER.ID()));
     }
 
     @Override
     protected void configureLEDs() {
         leds.setDefaultBehavior(LEDBehaviorFactory.SwirlBehabior(LEDConstants.allLEDs, 10, 5, Color.BLUE, Color.ORANGE));
 
-		leds.setBehavior(LED_STATES.COLLECTING.ID(), LEDBehaviorFactory.SolidColorBehavior(LEDConstants.allLEDs, Color.GREEN));
+        leds.setBehavior(LED_STATES.SINGLE_CONTROLLER.ID(), LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip2, Color.YELLOW).and(LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip4, Color.YELLOW)));
+
+        leds.setBehavior(LED_STATES.COLLECTED.ID(), LEDBehaviorFactory.BlinkColorBehavior(LEDConstants.strip1, 4, Color.GREEN));
+        leds.setBehavior(LED_STATES.SHOT.ID(), LEDBehaviorFactory.BlinkColorBehavior(LEDConstants.strip3, 4, Color.GREEN));
+
+		leds.setBehavior(LED_STATES.COLLECTING.ID(), LEDBehaviorFactory.pulseColorBehavior(LEDConstants.allLEDs, 8, Color.ORANGE));
         leds.setBehavior(LED_STATES.SHOOTING.ID(), LEDBehaviorFactory.pulseColorBehavior(LEDConstants.allLEDs, 8, Color.PURPLE));
+
 		leds.setBehavior(LED_STATES.AUTO.ID(), LEDBehaviorFactory.RainbowBehavior(LEDConstants.allLEDs, 3));
 		leds.setBehavior(LED_STATES.TEST.ID(), LEDBehaviorFactory.TestStripBehavior(0, 
 			() -> driver.getAButton(),

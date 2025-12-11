@@ -4,13 +4,13 @@
 
 package frc.robot.commands;
 
-import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.Constants.CollectorConstants;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
+import frc.util.leds.LEDCommand;
 
-public class SmartCollect extends Command {
+public class SmartCollect extends LEDCommand {
 
     private Indexer indexer;
     private Collector collector;
@@ -43,6 +43,8 @@ public class SmartCollect extends Command {
     public void end(boolean interrupted) {
         collector.setPower(0.0);
         indexer.setPower(0.0);
+
+        succeeded(interrupted);
     }
 
     @Override

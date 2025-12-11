@@ -65,6 +65,10 @@ public class Shooter extends SubsystemBase {
         setPowerBottom(powerBottom);
     }
 
+    public void stop() {
+        setPower(0);
+    }
+
     /**
      * @param power
      * @return instantCommand that sets the power

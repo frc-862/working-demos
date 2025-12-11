@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 import edu.wpi.first.wpilibj2.command.Command;
 
-public class LEDCommand extends Command {
+public abstract class LEDCommand extends Command {
     private ArrayList<Command> successCommands;
     private ArrayList<Command> failCommands;
 
@@ -27,8 +27,8 @@ public class LEDCommand extends Command {
         return this;
     }
 
-    protected void succeeded(boolean succeeded) {
-        if (succeeded) {
+    public void succeeded(boolean success) {
+         if (success) {
             for (Command command : successCommands) {
                 command.schedule();
             }
@@ -37,6 +37,5 @@ public class LEDCommand extends Command {
                 command.schedule();
             }
         }
-            
     }
 }

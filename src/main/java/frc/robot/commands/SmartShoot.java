@@ -19,10 +19,10 @@ public class SmartShoot extends LEDCommand {
     protected Indexer indexer;
     protected Shooter shooter;
 
-    protected DoubleSupplier shooterPower;
+    protected double shooterPower;
     protected boolean isShooting;
     
-    public SmartShoot(Indexer indexer, Shooter shooter, DoubleSupplier shooterPower) {
+    public SmartShoot(Indexer indexer, Shooter shooter, double shooterPower) {
         this.indexer = indexer;
         this.shooter = shooter;
         this.shooterPower = shooterPower;
@@ -35,28 +35,33 @@ public class SmartShoot extends LEDCommand {
 
         isShooting = false;
 
-        // wait for shooter to spin up before starting indexer
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run(){
-                indexer.setPower(IndexerConstants.DEFAULT_POWER);
-            }
-         }, ShooterConstants.SHOOT_DELAY);
+        shooter.setPower(shooterPower);
+
+        // // wait for shooter to spin up before starting indexer
+        // new Timer().schedule(new TimerTask() {
+        //     @Override
+        //     public void run(){
+        //         indexer.setPower(IndexerConstants.DEFAULT_POWER);
+        //     }
+        //  }, ShooterConstants.SHOOT_DELAY);
     }
 
     @Override
     public void execute() {
-        shooter.setPower(shooterPower.getAsDouble());
 
-        if (!isShooting && indexer.getShooterBeamBreak()) {
-            isShooting = true;
-        }
+        // if (shooterPower)
+
+        // if (!isShooting && indexer.getShooterBeamBreak()) {
+        //     isShooting = true;
+        // }
     }
 
     @Override
     public void end(boolean interrupted) {
-        shooter.setPower(0.0);
-        indexer.setPower(0.0);
+        shooter.stop();
+        indexer.stop();;
+
+        succeeded(isShooting && !indexer.getShooterBeamBreak());
     }
 
     @Override

@@ -12,7 +12,7 @@ public class ExtraSmartShoot extends SmartShoot {
     private boolean stoppedShooting;
     private double timeStopped;
 
-    public ExtraSmartShoot(Indexer indexer, Shooter shooter, DoubleSupplier shooterPower) {
+    public ExtraSmartShoot(Indexer indexer, Shooter shooter, double shooterPower) {
         super(indexer, shooter, shooterPower);
     }
 
@@ -44,5 +44,10 @@ public class ExtraSmartShoot extends SmartShoot {
             // or after 3 seconds of reversing indexer
             (stoppedShooting && (Timer.getFPGATimestamp() - timeStopped) >= IndexerConstants.ESShootTimeout);
     }
+
+    // @Override
+    // public void end(){
+    //     super.end();
+    // }
     
 }
