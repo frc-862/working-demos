@@ -1,5 +1,6 @@
 package frc.robot;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
@@ -45,7 +46,7 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected void configureDefaultCommands() {
-        drivetrain.setDefaultCommand(new TankDrive(drivetrain, () -> driver.getLeftY(), () -> driver.getRightY()));
+        drivetrain.setDefaultCommand(new TankDrive(drivetrain, () -> MathUtil.applyDeadband(driver.getLeftY(), 0.1d), () -> MathUtil.applyDeadband(driver.getRightY(), 0.1d)));
 
         collector.setDefaultCommand(new Collect(collector, () -> (copilot.getRightTriggerAxis() - copilot.getLeftTriggerAxis())));
     }
@@ -54,8 +55,8 @@ public class RobotContainer extends LightningContainer {
     protected void configureButtonBindings() {
         new Trigger(copilot::getAButton).whileTrue(new Shoot(shooter, () -> ShooterConstants.SHOOT_POWER));
 
-        new Trigger(copilot::getLeftBumperButtonPressed).whileTrue(new Index(indexer, () -> IndexerConstants.SPIT_POWER));
-        new Trigger(copilot::getRightBumperButtonPressed).whileTrue(new Index(indexer, () -> IndexerConstants.INTAKE_POWER));
+        new Trigger(copilot::getLeftBumperButton).whileTrue(new Index(indexer, () -> IndexerConstants.SPIT_POWER));
+        new Trigger(copilot::getRightBumperButton).whileTrue(new Index(indexer, () -> IndexerConstants.INTAKE_POWER));
     }
 
     @Override

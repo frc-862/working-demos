@@ -38,7 +38,7 @@ public final class Constants {
         public static final boolean INDEXER_INVERTED = false;
 
         public static final int SHOOTER_MOTOR_CAN = 11;
-        public static final boolean SHOOTER_INVERTED = false;
+        public static final boolean SHOOTER_INVERTED = true;
     }
     
     public static class ControllerConstants {
@@ -47,9 +47,6 @@ public final class Constants {
     }
 
     public final class DrivetrainConstants {
-        public static final double ROTOR_TO_SENSOR_RATIO = 10.71;
-        public static final double SENSOR_TO_MECHANISM_RATIO = 1/1; // 1:1 ratio
-
         public static final double STATOR_CURRENT_LIMIT = 120d;
 
         public static final boolean BRAKE_MODE = true;
