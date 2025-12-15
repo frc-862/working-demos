@@ -168,7 +168,9 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected Command getAutonomousCommand() {
-        return new InstantCommand();
+        return drivetrain.applyRequest(DriveRequests.getDrive(()-> 0, () -> 0.1, () -> 0)).withTimeout(3)
+            .withDeadline(new SmartCollect(indexer, collector))
+            .andThen(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40)));
     }
 
     private double getCopilotTriggerDifference() {
