@@ -38,6 +38,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import com.ctre.phoenix6.swerve.SwerveRequest.ForwardPerspectiveValue;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.LinearVelocity;
@@ -76,9 +77,14 @@ public final class Constants {
         public static final boolean INVERT_BOTTOM_MOTOR = true;
         public static final boolean BRAKE_MODE = false;
 
-        public static final long SHOOT_DELAY = 2000; // milliseconds
+        public static final double COAST_POWER = -0.05;
 
-        public static final double COAST_POWER = -0.1;
+        public static final double kP = 0.1;
+        public static final double kI = 0.0;
+        public static final double kD = 0.0;
+        public static final double kV = 0.096;
+        public static final double kS = 0.5;
+        public static final AngularVelocity TOLERANCE = RotationsPerSecond.of(2);
     }
 
     public static class IndexerConstants {

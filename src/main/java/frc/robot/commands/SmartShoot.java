@@ -4,12 +4,8 @@
 
 package frc.robot.commands;
 
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.function.DoubleSupplier;
-
+import edu.wpi.first.units.measure.AngularVelocity;
 import frc.robot.Constants.IndexerConstants;
-import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 import frc.util.leds.LEDCommand;
@@ -19,13 +15,13 @@ public class SmartShoot extends LEDCommand {
     protected Indexer indexer;
     protected Shooter shooter;
 
-    protected double shooterPower;
+    protected AngularVelocity velocity;
     protected boolean isShooting;
     
-    public SmartShoot(Indexer indexer, Shooter shooter, double shooterPower) {
+    public SmartShoot(Indexer indexer, Shooter shooter, AngularVelocity velocity) {
         this.indexer = indexer;
         this.shooter = shooter;
-        this.shooterPower = shooterPower;
+        this.velocity = velocity;
 
         addRequirements(indexer, shooter);
     }
@@ -35,25 +31,19 @@ public class SmartShoot extends LEDCommand {
 
         isShooting = false;
 
-        shooter.setPower(shooterPower);
-
-        // // wait for shooter to spin up before starting indexer
-        // new Timer().schedule(new TimerTask() {
-        //     @Override test
-        //     public void run(){
-        //         indexer.setPower(IndexerConstants.DEFAULT_POWER);
-        //     }
-        //  }, ShooterConstants.SHOOT_DELAY); 
+        shooter.setVelocity(velocity);
     }
 
     @Override
     public void execute() {
 
-        // if (shooterPower)
+        if (shooter.onTarget()) {
+            indexer.setPower(IndexerConstants.DEFAULT_POWER);
+        }
 
-        // if (!isShooting && indexer.getShooterBeamBreak()) {
-        //     isShooting = true;
-        // }
+        if (!isShooting && indexer.getShooterBeamBreak()) {
+            isShooting = true;
+        }
     }
 
     @Override

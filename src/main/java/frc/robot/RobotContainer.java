@@ -13,7 +13,6 @@ import frc.robot.Constants.LEDConstants;
 import frc.robot.Constants.LEDConstants.LED_STATES;
 import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
-import frc.robot.commands.SmartShoot;
 import frc.robot.Constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -24,6 +23,9 @@ import frc.util.leds.Color;
 import frc.util.leds.LEDBehaviorFactory;
 import frc.util.leds.LEDSubsystem;
 import frc.util.shuffleboard.DemoShuffleboard;
+
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -46,6 +48,7 @@ public class RobotContainer extends LightningContainer {
     private XboxController storedCopilot;
 
     private DoubleSubscriber shooterPowerMultiplier;
+    private DoubleSubscriber shooterRPS;
     private DoubleSubscriber driveMultiplier;
     private BooleanSubscriber useSingleController;
 
@@ -66,6 +69,7 @@ public class RobotContainer extends LightningContainer {
         shooterPowerMultiplier = DemoShuffleboard.subscribeToDouble("Shooter Power Multiplier", 0.4);
         driveMultiplier = DemoShuffleboard.subscribeToDouble("Drive Multiplier", 0.4);
         useSingleController = DemoShuffleboard.subscribeToBoolean("Use Single Controller", false);
+        shooterRPS = DemoShuffleboard.subscribeToDouble("Shooter RPS", 40);
     }
 
     @Override
@@ -78,7 +82,7 @@ public class RobotContainer extends LightningContainer {
             () -> -driver.getRightX() * driveMultiplier.get())));
 
         // coast shooter in
-        // shooter.setDefaultCommand(shooter.applyPower(() -> ShooterConstants.COAST_POWER));
+        shooter.setDefaultCommand(shooter.applyPower(ShooterConstants.COAST_POWER));
 
     }
 
@@ -102,15 +106,10 @@ public class RobotContainer extends LightningContainer {
             .whileTrue(new SmartCollect(indexer, collector)
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.COLLECTED.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
-
-        // Smart shoot
-        // new Trigger(copilot::getBButton)
-        //     .whileTrue(new SmartShoot(indexer, shooter, () -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
-        //     .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
-        //     .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
-
+        
+        // Extra Smart Shoot
         new Trigger(copilot::getXButton)
-            .whileTrue(new ExtraSmartShoot(indexer, shooter, 0.5 * shooterPowerMultiplier.get())
+            .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 

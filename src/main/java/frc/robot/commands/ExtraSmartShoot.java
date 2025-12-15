@@ -2,6 +2,7 @@ package frc.robot.commands;
 
 import java.util.function.DoubleSupplier;
 
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants.IndexerConstants;
 import frc.robot.subsystems.Indexer;
@@ -12,8 +13,8 @@ public class ExtraSmartShoot extends SmartShoot {
     private boolean stoppedShooting;
     private double timeStopped;
 
-    public ExtraSmartShoot(Indexer indexer, Shooter shooter, double shooterPower) {
-        super(indexer, shooter, shooterPower);
+    public ExtraSmartShoot(Indexer indexer, Shooter shooter, AngularVelocity velocity) {
+        super(indexer, shooter, velocity);
     }
 
     @Override
@@ -44,10 +45,5 @@ public class ExtraSmartShoot extends SmartShoot {
             // or after 3 seconds of reversing indexer
             (stoppedShooting && (Timer.getFPGATimestamp() - timeStopped) >= IndexerConstants.ESShootTimeout);
     }
-
-    // @Override
-    // public void end(){
-    //     super.end();
-    // }
     
 }
