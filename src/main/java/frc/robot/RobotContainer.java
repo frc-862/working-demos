@@ -78,7 +78,7 @@ public class RobotContainer extends LightningContainer {
             () -> -driver.getRightX() * driveMultiplier.get())));
 
         // coast shooter in
-        shooter.setDefaultCommand(shooter.applyPower(() -> ShooterConstants.COAST_POWER));
+        // shooter.setDefaultCommand(shooter.applyPower(() -> ShooterConstants.COAST_POWER));
 
     }
 

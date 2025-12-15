@@ -61,7 +61,7 @@ public class SmartShoot extends LEDCommand {
         shooter.stop();
         indexer.stop();;
 
-        succeeded(isShooting && !indexer.getShooterBeamBreak());
+        succeeded(true);
     }
 
     @Override
