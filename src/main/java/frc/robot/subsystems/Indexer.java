@@ -11,8 +11,8 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.IndexerConstants;
-import frc.robot.Constants.RobotMap;
+import frc.robot.constants.IndexerConstants;
+import frc.robot.constants.RobotMap;
 import frc.util.hardware.ThunderBird;
 
 public class Indexer extends SubsystemBase {

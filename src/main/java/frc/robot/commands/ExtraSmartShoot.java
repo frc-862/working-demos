@@ -1,10 +1,8 @@
 package frc.robot.commands;
 
-import java.util.function.DoubleSupplier;
-
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj.Timer;
-import frc.robot.Constants.IndexerConstants;
+import frc.robot.constants.IndexerConstants;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 

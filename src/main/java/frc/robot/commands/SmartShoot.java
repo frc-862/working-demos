@@ -5,7 +5,7 @@
 package frc.robot.commands;
 
 import edu.wpi.first.units.measure.AngularVelocity;
-import frc.robot.Constants.IndexerConstants;
+import frc.robot.constants.IndexerConstants;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;
 import frc.util.leds.LEDCommand;

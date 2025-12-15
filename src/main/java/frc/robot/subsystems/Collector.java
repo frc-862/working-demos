@@ -10,8 +10,8 @@ import com.ctre.phoenix6.controls.DutyCycleOut;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants.CollectorConstants;
-import frc.robot.Constants.RobotMap;
+import frc.robot.constants.CollectorConstants;
+import frc.robot.constants.RobotMap;
 import frc.util.hardware.ThunderBird;
 
 public class Collector extends SubsystemBase {

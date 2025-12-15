@@ -4,16 +4,16 @@
 
 package frc.robot;
 
-import frc.robot.Constants.CollectorConstants;
-import frc.robot.Constants.ControllerConstants;
-import frc.robot.Constants.DrivetrainConstants;
-import frc.robot.Constants.DrivetrainConstants.DriveRequests;
-import frc.robot.Constants.IndexerConstants;
-import frc.robot.Constants.LEDConstants;
-import frc.robot.Constants.LEDConstants.LED_STATES;
+import frc.robot.constants.CollectorConstants;
+import frc.robot.constants.ControllerConstants;
+import frc.robot.constants.DrivetrainConstants;
+import frc.robot.constants.DrivetrainConstants.DriveRequests;
+import frc.robot.constants.IndexerConstants;
+import frc.robot.constants.LEDConstants;
+import frc.robot.constants.LEDConstants.LED_STATES;
 import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
-import frc.robot.Constants.ShooterConstants;
+import frc.robot.constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Shooter;

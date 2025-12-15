@@ -4,8 +4,8 @@
 
 package frc.robot.commands;
 
-import frc.robot.Constants.CollectorConstants;
-import frc.robot.Constants.IndexerConstants;
+import frc.robot.constants.CollectorConstants;
+import frc.robot.constants.IndexerConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
 import frc.util.leds.LEDCommand;
