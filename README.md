@@ -8,8 +8,9 @@ There should be minimal changes to any robots.
 - Orion
 - Eddie
 - Sparkplug
+- Cheese
+- Void
 
 ### TODO:
-- Void
 - Greg
-- Rhapsody
+- Rhapsody (currently in Rhapsody Repo)
