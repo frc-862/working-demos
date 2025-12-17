@@ -26,6 +26,7 @@ import frc.util.shuffleboard.DemoShuffleboard;
 
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.networktables.BooleanSubscriber;
 import edu.wpi.first.networktables.DoubleSubscriber;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -77,9 +78,9 @@ public class RobotContainer extends LightningContainer {
         
         // default drive
         drivetrain.setDefaultCommand(drivetrain.applyRequest(DriveRequests.getDrive(
-            () -> -driver.getLeftX() * driveMultiplier.get(), 
-            () -> -driver.getLeftY() * driveMultiplier.get(), 
-            () -> -driver.getRightX() * driveMultiplier.get())));
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3))));
 
         // coast shooter in
         shooter.setDefaultCommand(shooter.applyPower(ShooterConstants.COAST_POWER));
@@ -91,9 +92,11 @@ public class RobotContainer extends LightningContainer {
         // demo collect & index
         new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER)
             .alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
+            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
         new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER)
             .alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
+            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
         // demo shoot
@@ -122,9 +125,12 @@ public class RobotContainer extends LightningContainer {
 
         // slowmode
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getDrive(
-            () -> -driver.getLeftX() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER, 
-            () -> -driver.getLeftY() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER, 
-            () -> -driver.getRightX() * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER)));
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX() * driveMultiplier.get() 
+                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY() * driveMultiplier.get() 
+                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX() * driveMultiplier.get()
+                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3))));
 
         // brake
         new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));

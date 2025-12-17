@@ -275,8 +275,6 @@ public class DrivetrainConstants {
                 .withVelocityY(y.getAsDouble() * MAX_SPEED) // Drive left with negative X
                 .withRotationalRate(rot.getAsDouble() * MAX_ANGULAR_RATE)
                 .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-                .withDeadband(ControllerConstants.DEADBAND)
-                .withRotationalDeadband(ControllerConstants.DEADBAND)
                 .withForwardPerspective(ForwardPerspectiveValue.OperatorPerspective); // Drive counterclockwise with negative
                                                                             // X (left)
                                                                     
@@ -291,9 +289,7 @@ public class DrivetrainConstants {
                                                                                 // (left)
                 .withRotationalRate(rot.getAsDouble() * MAX_ANGULAR_RATE) // Drive counterclockwise with negative
                                                                             // X (left)
-                .withDriveRequestType(DriveRequestType.OpenLoopVoltage)
-                .withDeadband(ControllerConstants.DEADBAND)
-                .withRotationalDeadband(ControllerConstants.DEADBAND);
+                .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
         }
 
         public static Supplier<SwerveRequest> getBrake() {

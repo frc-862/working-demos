@@ -37,6 +37,10 @@ public class Collector extends SubsystemBase {
         collectorMotor.setControl(collectorDutyCycle.withOutput(0));
     }
 
+    public Command applyStop() {
+        return runOnce(this::stop);
+    }
+
     /**
      * @param power
      * @return instantCommand that sets the power
