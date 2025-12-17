@@ -94,10 +94,7 @@ public class Shooter extends SubsystemBase {
      * @return instantCommand that sets the power
      */
     public Command applyPower(double power) {
-        return runOnce(() -> {
-            setPowerTop(power);
-            setPowerBottom(power);
-        });
+        return runOnce(() -> setPower(power));
     }
 
     /**
@@ -106,10 +103,7 @@ public class Shooter extends SubsystemBase {
      * @return instantCommand that sets the power
      */
     public Command applyPower(double powerTop, double powerBottom) {
-        return runOnce(() -> {
-            setPowerTop(powerTop);
-            setPowerBottom(powerBottom);
-        });
+        return runOnce(() -> setPower(powerTop, powerBottom));
     }
 
     /**
@@ -117,10 +111,7 @@ public class Shooter extends SubsystemBase {
      * @return runCommand that sets the power
      */
     public Command applyPower(DoubleSupplier power){
-        return run(() -> {
-            setPowerTop(power.getAsDouble());
-            setPowerBottom(power.getAsDouble());
-        });
+        return startEnd(() -> setPower(power.getAsDouble()), () -> stop());
     }
 
     /**
@@ -129,10 +120,7 @@ public class Shooter extends SubsystemBase {
      * @return runCommand that sets the power
      */
     public Command applyPower(DoubleSupplier powerTop, DoubleSupplier powerBottom){
-        return run(() -> {
-            setPowerTop(powerTop.getAsDouble());
-            setPowerBottom(powerBottom.getAsDouble());
-        });
+        return startEnd(() -> setPower(powerTop.getAsDouble(), powerBottom.getAsDouble()), () -> stop());
     }
     
     public void setVelocityTop(AngularVelocity velocity) {
@@ -155,21 +143,15 @@ public class Shooter extends SubsystemBase {
     }
 
     public Command applyVelocity(AngularVelocity velocity) {
-        return runOnce(() -> {
-            setVelocity(velocity);
-        });
+        return runOnce(() -> setVelocity(velocity));
     }
 
     public Command applyVelocity(Supplier<AngularVelocity> velocityTop, Supplier<AngularVelocity> velocityBottom) {
-        return run(() -> {
-            setVelocity(velocityTop.get(), velocityBottom.get());
-        });
+        return startEnd(() -> setVelocity(velocityTop.get(), velocityBottom.get()), () -> stop());
     }
 
     public Command applyVelocity(Supplier<AngularVelocity> velocity) {
-        return run(() -> {
-            setVelocity(velocity.get());
-        });
+        return startEnd(() -> setVelocity(velocity.get()), () -> stop());
     }
 
     public AngularVelocity getBottomVelocity() {

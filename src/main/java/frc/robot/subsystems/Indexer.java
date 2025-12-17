@@ -44,10 +44,6 @@ public class Indexer extends SubsystemBase {
         indexerMotor.setControl(indexerDutyCycle.withOutput(0));
     }
 
-    public Command applyStop() {
-        return runOnce(() -> stop());
-    }
-
     /**
      * @param power
      * @return instantCommand that sets the power
@@ -61,7 +57,7 @@ public class Indexer extends SubsystemBase {
      * @return runCommand that sets the power
      */
     public Command applyPower(DoubleSupplier power){
-        return run(() -> setPower(power.getAsDouble()));
+        return startEnd(() -> setPower(power.getAsDouble()), () -> stop());
     }
 
     public boolean getCollectorBeamBreak() {

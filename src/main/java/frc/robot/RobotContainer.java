@@ -89,11 +89,11 @@ public class RobotContainer extends LightningContainer {
     @Override
     protected void configureButtonBindings() {
         // demo collect & index
-        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER).alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
-            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
+        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER)
+            .alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
-        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER).alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
-            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
+        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER)
+            .alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
         // demo shoot

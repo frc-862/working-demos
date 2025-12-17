@@ -6,7 +6,7 @@ import edu.wpi.first.units.measure.AngularVelocity;
 
 public class ShooterConstants {
 
-    public static final double STATOR_LIMIT = 60;
+    public static final double STATOR_LIMIT = 80d;
     public static final boolean INVERT_TOP_MOTOR = false;
     public static final boolean INVERT_BOTTOM_MOTOR = true;
     public static final boolean BRAKE_MODE = false;
