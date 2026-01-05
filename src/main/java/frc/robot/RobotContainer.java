@@ -64,8 +64,7 @@ public class RobotContainer extends LightningContainer {
         leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_LENGTH, LEDConstants.LED_PWM_PORT);
         
         driver = new XboxController(ControllerConstants.DRIVER);
-        copilot = new XboxController(ControllerConstants.COPILOT);
-        storedCopilot = copilot;
+        copilot = storedCopilot = new XboxController(ControllerConstants.COPILOT);
 
         shooterPowerMultiplier = DemoShuffleboard.subscribeToDouble("Shooter Power Multiplier", 0.4);
         driveMultiplier = DemoShuffleboard.subscribeToDouble("Drive Multiplier", 0.4);
@@ -78,9 +77,9 @@ public class RobotContainer extends LightningContainer {
         
         // default drive
         drivetrain.setDefaultCommand(drivetrain.applyRequest(DriveRequests.getDrive(
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3), 
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3), 
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX() * driveMultiplier.get(), ControllerConstants.DEADBAND), 3))));
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3)  * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get())));
 
         // coast shooter in
         shooter.setDefaultCommand(shooter.applyPower(ShooterConstants.COAST_POWER));
@@ -116,21 +115,12 @@ public class RobotContainer extends LightningContainer {
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 
-        // robot-centric
-        new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(
-            drivetrain.applyRequest(DriveRequests.getRobotCentric(
-                () -> -driver.getLeftX() * driveMultiplier.get(), 
-                () -> -driver.getLeftY() * driveMultiplier.get(), 
-                () -> -driver.getRightX() * driveMultiplier.get())));
 
-        // slowmode
-        new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getDrive(
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX() * driveMultiplier.get() 
-                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3), 
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY() * driveMultiplier.get() 
-                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3), 
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX() * driveMultiplier.get()
-                * DrivetrainConstants.SLOWMODE_MULTIPLIER, ControllerConstants.DEADBAND), 3))));
+        // robot centric
+        new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get())));
 
         // brake
         new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));

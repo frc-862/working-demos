@@ -283,9 +283,9 @@ public class DrivetrainConstants {
         public static Supplier<SwerveRequest> getRobotCentric(DoubleSupplier x, DoubleSupplier y,
                 DoubleSupplier rot) {
             return () -> ROBO_CENTRIC
-                .withVelocityX(y.getAsDouble() * MAX_SPEED) // Drive forward with negative Y
+                .withVelocityX(x.getAsDouble() * MAX_SPEED) // Drive forward with negative Y
                                                                                 // (forward)
-                .withVelocityY(x.getAsDouble() * MAX_SPEED) // Drive left with negative X
+                .withVelocityY(y.getAsDouble() * MAX_SPEED) // Drive left with negative X
                                                                                 // (left)
                 .withRotationalRate(rot.getAsDouble() * MAX_ANGULAR_RATE) // Drive counterclockwise with negative
                                                                             // X (left)
