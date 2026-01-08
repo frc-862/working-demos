@@ -14,6 +14,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.constants.IndexerConstants;
 import frc.robot.constants.RobotMap;
 import frc.util.hardware.ThunderBird;
+import frc.util.shuffleboard.LightningShuffleboard;
 
 public class Indexer extends SubsystemBase {
     
@@ -70,5 +71,11 @@ public class Indexer extends SubsystemBase {
 
     public boolean getShooterBeamBreak() {
         return shooterBeamBreak.get();
+    }
+
+    @Override
+    public void periodic() {
+        LightningShuffleboard.setBool("Indexer", "Collector", getCollectorBeamBreak());
+        LightningShuffleboard.setBool("Indexer", "Shooter", getShooterBeamBreak());
     }
 }

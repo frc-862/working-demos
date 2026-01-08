@@ -21,6 +21,7 @@ public class LEDConstants {
     public static final LEDStrip allLEDs = new LEDStrip(200, 0);
 
     public enum LED_STATES {
+        ERROR,
         TEST,
         AUTO,
         SINGLE_CONTROLLER,

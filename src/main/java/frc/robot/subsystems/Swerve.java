@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.constants.DrivetrainConstants.TunerConstants.TunerSwerveDrivetrain;
+import frc.util.shuffleboard.LightningShuffleboard;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -21,9 +22,9 @@ import frc.robot.constants.DrivetrainConstants.TunerConstants.TunerSwerveDrivetr
 public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
     /* Blue alliance sees forward as 0 degrees (toward red alliance wall) */
-    private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kZero;
+    private static final Rotation2d kBlueAlliancePerspectiveRotation = Rotation2d.kCW_90deg;
     /* Red alliance sees forward as 180 degrees (toward blue alliance wall) */
-    private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.k180deg;
+    private static final Rotation2d kRedAlliancePerspectiveRotation = Rotation2d.kCCW_90deg;
     /* Keep track if we've ever applied the operator perspective before or not */
     private boolean m_hasAppliedOperatorPerspective = false;
 

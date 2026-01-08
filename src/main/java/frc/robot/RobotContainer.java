@@ -33,6 +33,9 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RobotContainer extends LightningContainer {
@@ -120,13 +123,19 @@ public class RobotContainer extends LightningContainer {
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(
             () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
             () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get()))).whileTrue(leds.enableState(LED_STATES.ERROR.ID()));
+
+        // slowmode
+        new Trigger(() -> (driver.getRightTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER,
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get() * DrivetrainConstants.SLOWMODE_MULTIPLIER, 
             () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get())));
 
         // brake
         new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));
 
         // reset field forward
-        new Trigger(() -> driver.getStartButton() && driver.getBackButton()).onTrue(drivetrain.commandResetFieldForward());
+        new Trigger(() -> driver.getStartButton() && driver.getBackButton()).onTrue(drivetrain.commandResetFieldForward()).whileTrue(leds.enableState(LED_STATES.ERROR.ID()));
 
         // switch to single controller mode when enabled
         new Trigger(useSingleController::get)
@@ -138,6 +147,8 @@ public class RobotContainer extends LightningContainer {
     @Override
     protected void configureLEDs() {
         leds.setDefaultBehavior(LEDBehaviorFactory.SwirlBehabior(LEDConstants.allLEDs, 10, 5, Color.BLUE, Color.ORANGE));
+
+        leds.setBehavior(LED_STATES.ERROR.ID(), LEDBehaviorFactory.BlinkColorBehavior(LEDConstants.allLEDs, 2, Color.RED));
 
         leds.setBehavior(LED_STATES.SINGLE_CONTROLLER.ID(), LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip2, Color.YELLOW).and(LEDBehaviorFactory.SolidColorBehavior(LEDConstants.strip4, Color.YELLOW)));
 
@@ -166,9 +177,21 @@ public class RobotContainer extends LightningContainer {
     protected Command getAutonomousCommand() {
 
         // drive back, collect, shoot
-        return drivetrain.applyRequest(DriveRequests.getDrive(()-> 0, () -> -0.1, () -> 0)).withTimeout(3)
-            .withDeadline(new SmartCollect(indexer, collector))
-            .andThen(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40)));
+        // return drivetrain.applyRequest(DriveRequests.getDrive(()-> 0, () -> 0.1, () -> 0)).withTimeout(3)
+        //     .withDeadline(new SmartCollect(indexer, collector))
+        //     .andThen(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40)));
+
+        return new SequentialCommandGroup(
+            drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0.1, () -> 0)),
+            shooter.applyVelocity(RotationsPerSecond.of(40)),
+            collector.applyPower(CollectorConstants.DEFAULT_POWER),
+            indexer.applyPower(IndexerConstants.DEFAULT_POWER),
+            new WaitCommand(3),
+            drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0)),
+            collector.applyStop(),
+            indexer.applyStop(),
+            shooter.applyStop()
+        );
     }
 
     private double getCopilotTriggerDifference() {
