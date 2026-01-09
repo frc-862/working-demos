@@ -13,7 +13,6 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import frc.robot.constants.DrivetrainConstants.TunerConstants.TunerSwerveDrivetrain;
-import frc.util.shuffleboard.LightningShuffleboard;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -79,7 +78,7 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
     public Command commandResetFieldForward() {
         return new InstantCommand(() -> {
             seedFieldCentric();
-            setOperatorPerspectiveForward(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Red ? 
+            setOperatorPerspectiveForward(DriverStation.getAlliance().orElse(Alliance.Blue) == Alliance.Blue ? 
                 kBlueAlliancePerspectiveRotation : kRedAlliancePerspectiveRotation);
         });
     }

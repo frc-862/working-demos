@@ -11,9 +11,7 @@ import frc.robot.constants.DrivetrainConstants.DriveRequests;
 import frc.robot.constants.IndexerConstants;
 import frc.robot.constants.LEDConstants;
 import frc.robot.constants.LEDConstants.LED_STATES;
-import frc.robot.commands.ExtraSmartCollect;
 import frc.robot.commands.ExtraSmartShoot;
-import frc.robot.commands.SmartCollect;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -81,8 +79,8 @@ public class RobotContainer extends LightningContainer {
         
         // default drive
         drivetrain.setDefaultCommand(drivetrain.applyRequest(DriveRequests.getDrive(
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
-            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3)  * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftY(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get(), 
+            () -> -Math.pow(MathUtil.applyDeadband(driver.getLeftX(), ControllerConstants.DEADBAND), 3)  * driveMultiplier.get(), 
             () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get())));
 
         // coast shooter in
@@ -94,33 +92,32 @@ public class RobotContainer extends LightningContainer {
     protected void configureButtonBindings() {
         // demo collect & index
         new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
-            // .alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
-            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
+            .onFalse(collector.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
+
         new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
-            // .alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
-            .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
+            .onFalse(collector.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
         // demo shoot
         new Trigger(() -> Math.abs(getCopilotTriggerDifference()) > ControllerConstants.DEADBAND)
             .whileTrue(shooter.applyPower(() -> getCopilotTriggerDifference() * shooterPowerMultiplier.get())
             .deadlineFor(leds.enableState(LED_STATES.SHOOTING.ID())));
-        
-        // Smart Collect
-        new Trigger(copilot::getAButton)
-            .whileTrue(new SmartCollect(indexer, collector)
-            .onSuccess(leds.enableStateWithTimeout(LED_STATES.COLLECTED.ID(), 5))
-            .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
+
+        // manual index
+        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
+            .onFalse(collector.applyStop())
+            .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
+
+        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
+            .onFalse(collector.applyStop())
+            .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
         
         // Extra Smart Shoot
-        new Trigger(copilot::getXButton)
+        new Trigger(copilot::getYButton)
             .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
-        
-        // Extra Smart Collect
-        new Trigger(copilot::getBButton).whileTrue(new ExtraSmartCollect(indexer, collector));
 
         // robot centric
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(
