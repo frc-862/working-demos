@@ -66,11 +66,11 @@ public class Indexer extends SubsystemBase {
     }
 
     public boolean getCollectorBeamBreak() {
-        return collectorBeamBreak.get();
+        return !collectorBeamBreak.get();
     }
 
     public boolean getShooterBeamBreak() {
-        return shooterBeamBreak.get();
+        return !shooterBeamBreak.get();
     }
 
     @Override

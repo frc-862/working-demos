@@ -11,6 +11,7 @@ import frc.robot.constants.DrivetrainConstants.DriveRequests;
 import frc.robot.constants.IndexerConstants;
 import frc.robot.constants.LEDConstants;
 import frc.robot.constants.LEDConstants.LED_STATES;
+import frc.robot.commands.ExtraSmartCollect;
 import frc.robot.commands.ExtraSmartShoot;
 import frc.robot.commands.SmartCollect;
 import frc.robot.constants.ShooterConstants;
@@ -92,12 +93,12 @@ public class RobotContainer extends LightningContainer {
     @Override
     protected void configureButtonBindings() {
         // demo collect & index
-        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER)
-            .alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
+        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
+            // .alongWith(indexer.applyPower(IndexerConstants.DEFAULT_POWER)))
             .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
-        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER)
-            .alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
+        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
+            // .alongWith(indexer.applyPower(-IndexerConstants.DEFAULT_POWER)))
             .onFalse(collector.applyStop().alongWith(indexer.applyStop()))
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
@@ -117,7 +118,9 @@ public class RobotContainer extends LightningContainer {
             .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
-
+        
+        // Extra Smart Collect
+        new Trigger(copilot::getBButton).whileTrue(new ExtraSmartCollect(indexer, collector));
 
         // robot centric
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(

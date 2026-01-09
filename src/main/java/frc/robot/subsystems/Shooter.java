@@ -14,6 +14,7 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.constants.CollectorConstants;
 import frc.robot.constants.RobotMap;
 import frc.robot.constants.ShooterConstants;
 import frc.util.hardware.ThunderBird;
@@ -180,5 +181,10 @@ public class Shooter extends SubsystemBase {
 
     public boolean onTarget(){
         return bottomOnTarget() && topOnTarget();
+    }
+
+    public boolean getShooterCurrentHit(){
+        return shooterMotorTop.getStatorCurrent().getValue().minus(ShooterConstants.THRESHHOLD).magnitude() > 0
+            && shooterMotorBottom.getStatorCurrent().getValue().minus(ShooterConstants.THRESHHOLD).magnitude() > 0;
     }
 }

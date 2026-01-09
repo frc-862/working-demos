@@ -1,8 +1,10 @@
 package frc.robot.constants;
 
+import static edu.wpi.first.units.Units.Amps;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 
 import edu.wpi.first.units.measure.AngularVelocity;
+import edu.wpi.first.units.measure.Current;
 
 public class ShooterConstants {
 
@@ -19,4 +21,5 @@ public class ShooterConstants {
     public static final double kV = 0.096;
     public static final double kS = 0.5;
     public static final AngularVelocity TOLERANCE = RotationsPerSecond.of(2);
+    public static final Current THRESHHOLD = Amps.of(20);
 }

@@ -12,10 +12,10 @@ import frc.util.leds.LEDCommand;
 
 public class SmartCollect extends LEDCommand {
 
-    private Indexer indexer;
-    private Collector collector;
+    protected Indexer indexer;
+    protected Collector collector;
 
-    private boolean isCollecting;
+    protected boolean isCollecting;
   
     public SmartCollect(Indexer indexer, Collector collector) {
         this.indexer = indexer;
