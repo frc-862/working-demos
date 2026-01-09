@@ -56,7 +56,7 @@ public class SmartShoot extends LEDCommand {
 
     @Override
     public boolean isFinished() {
-        return isShooting && (!indexer.getShooterBeamBreak() || shooter.getShooterCurrentHit()); //TODO: I dont think current hit is necessary
+        return isShooting && !indexer.getShooterBeamBreak(); //TODO: I dont think current hit is necessary
     }
 }
 

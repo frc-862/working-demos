@@ -12,6 +12,9 @@ import frc.robot.constants.IndexerConstants;
 import frc.robot.constants.LEDConstants;
 import frc.robot.constants.LEDConstants.LED_STATES;
 import frc.robot.commands.ExtraSmartShoot;
+import frc.robot.commands.SmartCollect;
+import frc.robot.commands.SmartShoot;
+import frc.robot.commands.SmartShoot;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -115,7 +118,7 @@ public class RobotContainer extends LightningContainer {
         
         // Extra Smart Shoot
         new Trigger(copilot::getYButton)
-            .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
+            .whileTrue(new SmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 
@@ -183,21 +186,22 @@ public class RobotContainer extends LightningContainer {
         // TODO: Test
 
         // drive back, collect, shoot
-        // return drivetrain.applyRequest(DriveRequests.getDrive(()-> 0, () -> 0.1, () -> 0)).withTimeout(3)
-        //     .withDeadline(new SmartCollect(indexer, collector))
-        //     .andThen(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40)));
+        return (drivetrain.applyRequest(DriveRequests.getDrive(()-> -0.1, () -> 0, () -> 0)).withTimeout(3)
+            .withDeadline(new SmartCollect(indexer, collector)))
+            .andThen(drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0))
+            .alongWith(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40))));
 
-        return new SequentialCommandGroup(
-            drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0.1, () -> 0)),
-            shooter.applyVelocity(RotationsPerSecond.of(40)),
-            collector.applyPower(CollectorConstants.DEFAULT_POWER),
-            indexer.applyPower(IndexerConstants.DEFAULT_POWER),
-            new WaitCommand(3),
-            drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0)),
-            collector.applyStop(),
-            indexer.applyStop(),
-            shooter.applyStop()
-        );
+        // return new SequentialCommandGroup(
+        //     drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0.1, () -> 0)),
+        //     shooter.applyVelocity(RotationsPerSecond.of(40)),
+        //     collector.applyPower(CollectorConstants.DEFAULT_POWER),
+        //     indexer.applyPower(IndexerConstants.DEFAULT_POWER),
+        //     new WaitCommand(3),
+        //     drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0)),
+        //     collector.applyStop(),
+        //     indexer.applyStop(),
+        //     shooter.applyStop()
+        // );
     }
 
     private double getCopilotTriggerDifference() {
