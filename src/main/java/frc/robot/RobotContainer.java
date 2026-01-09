@@ -32,7 +32,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -105,11 +105,11 @@ public class RobotContainer extends LightningContainer {
             .deadlineFor(leds.enableState(LED_STATES.SHOOTING.ID())));
 
         // manual index
-        new Trigger(copilot::getLeftBumperButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
+        new Trigger(copilot::getXButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
             .onFalse(collector.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
-        new Trigger(copilot::getRightBumperButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
+        new Trigger(copilot::getBButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
             .onFalse(collector.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
         
@@ -118,6 +118,11 @@ public class RobotContainer extends LightningContainer {
             .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
+
+        // keep flyweheel spun up
+        new Trigger(copilot::getAButton)
+            .whileTrue(new RunCommand(() -> shooter.setVelocity(RotationsPerSecond.of(shooterRPS.get()))) // will be autostopped by coast power
+            .deadlineFor(leds.enableState(LED_STATES.SHOOTING.ID()))); // use run command to avoid requiring shooter
 
         // robot centric
         new Trigger(() -> (driver.getLeftTriggerAxis()) > ControllerConstants.DEADBAND).whileTrue(drivetrain.applyRequest(DriveRequests.getRobotCentric(
@@ -132,7 +137,7 @@ public class RobotContainer extends LightningContainer {
             () -> -Math.pow(MathUtil.applyDeadband(driver.getRightX(), ControllerConstants.DEADBAND), 3) * driveMultiplier.get())));
 
         // brake
-        new Trigger(driver::getXButton).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));
+        new Trigger(() -> useSingleController.get() ? false : driver.getXButton()).whileTrue(drivetrain.applyRequest(DriveRequests.getBrake()));
 
         // reset field forward
         new Trigger(() -> driver.getStartButton() && driver.getBackButton()).onTrue(drivetrain.commandResetFieldForward()).whileTrue(leds.enableState(LED_STATES.ERROR.ID()));
@@ -175,6 +180,7 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected Command getAutonomousCommand() {
+        // TODO: Test
 
         // drive back, collect, shoot
         // return drivetrain.applyRequest(DriveRequests.getDrive(()-> 0, () -> 0.1, () -> 0)).withTimeout(3)
