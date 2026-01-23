@@ -7,14 +7,12 @@ package frc.robot;
 import frc.robot.constants.CollectorConstants;
 import frc.robot.constants.ControllerConstants;
 import frc.robot.constants.DrivetrainConstants;
-import frc.robot.constants.DrivetrainConstants.DriveRequests;
 import frc.robot.constants.IndexerConstants;
+import frc.robot.constants.DrivetrainConstants.DriveRequests;
+import frc.robot.constants.DrivetrainConstants.TunerConstants;
 import frc.robot.constants.LEDConstants;
 import frc.robot.constants.LEDConstants.LED_STATES;
 import frc.robot.commands.ExtraSmartShoot;
-import frc.robot.commands.SmartCollect;
-import frc.robot.commands.SmartShoot;
-import frc.robot.commands.SmartShoot;
 import frc.robot.constants.ShooterConstants;
 import frc.robot.subsystems.Collector;
 import frc.robot.subsystems.Indexer;
@@ -36,8 +34,6 @@ import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.WaitCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class RobotContainer extends LightningContainer {
@@ -60,7 +56,7 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected void initializeHardware() {
-        drivetrain = DrivetrainConstants.TunerConstants.createDrivetrain();
+        drivetrain = TunerConstants.createDrivetrain();
         
         collector = new Collector();
         indexer = new Indexer();
@@ -108,17 +104,17 @@ public class RobotContainer extends LightningContainer {
             .deadlineFor(leds.enableState(LED_STATES.SHOOTING.ID())));
 
         // manual index
-        new Trigger(copilot::getXButton).onTrue(collector.applyPower(CollectorConstants.DEFAULT_POWER))
-            .onFalse(collector.applyStop())
+        new Trigger(copilot::getXButton).onTrue(indexer.applyPower(IndexerConstants.DEFAULT_POWER))
+            .onFalse(indexer.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
 
-        new Trigger(copilot::getBButton).onTrue(collector.applyPower(-CollectorConstants.DEFAULT_POWER))
-            .onFalse(collector.applyStop())
+        new Trigger(copilot::getBButton).onTrue(indexer.applyPower(-IndexerConstants.DEFAULT_POWER))
+            .onFalse(indexer.applyStop())
             .whileTrue(leds.enableState(LED_STATES.COLLECTING.ID()));
         
         // Extra Smart Shoot
         new Trigger(copilot::getYButton)
-            .whileTrue(new SmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
+            .whileTrue(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(shooterRPS.get()))
             .onSuccess(leds.enableStateWithTimeout(LED_STATES.SHOT.ID(), 5))
             .deadlineFor(leds.enableState(LED_STATES.COLLECTING.ID())));
 
@@ -183,25 +179,7 @@ public class RobotContainer extends LightningContainer {
 
     @Override
     protected Command getAutonomousCommand() {
-        // TODO: Test
-
-        // drive back, collect, shoot
-        return (drivetrain.applyRequest(DriveRequests.getDrive(()-> -0.1, () -> 0, () -> 0)).withTimeout(3)
-            .withDeadline(new SmartCollect(indexer, collector)))
-            .andThen(drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0))
-            .alongWith(new ExtraSmartShoot(indexer, shooter, RotationsPerSecond.of(40))));
-
-        // return new SequentialCommandGroup(
-        //     drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0.1, () -> 0)),
-        //     shooter.applyVelocity(RotationsPerSecond.of(40)),
-        //     collector.applyPower(CollectorConstants.DEFAULT_POWER),
-        //     indexer.applyPower(IndexerConstants.DEFAULT_POWER),
-        //     new WaitCommand(3),
-        //     drivetrain.applyRequest(DriveRequests.getDrive(() -> 0, () -> 0, () -> 0)),
-        //     collector.applyStop(),
-        //     indexer.applyStop(),
-        //     shooter.applyStop()
-        // );
+        return new InstantCommand();
     }
 
     private double getCopilotTriggerDifference() {
