@@ -111,13 +111,21 @@ public class RobotContainer {
         * Note that X is defined as forward according to WPILib convention,
         * Y is defined as to the left according to WPILib convention.
         */
-        drivetrain.setDefaultCommand(drivetrain.driveCommand(
-                () -> MathUtil.copyDirectionPow(MathUtil.applyDeadband(
-                        VecBuilder.fill((-driver.getLeftY()), (-driver.getLeftX())), DriveConstants.JOYSTICK_DEADBAND),
-                        DriveConstants.CONTROLLER_POW).times(driver.getRightTriggerAxis() > DriveConstants.TRIGGER_DEADBAND 
-                        ? DriveConstants.SLOW_MODE_MULT : 1.0), () -> MathUtil.copyDirectionPow(MathUtil.applyDeadband((-driver.getRightX()),
-                        DriveConstants.JOYSTICK_DEADBAND), DriveConstants.CONTROLLER_POW)
-                        * (driver.getRightTriggerAxis() > DriveConstants.TRIGGER_DEADBAND ? DriveConstants.SLOW_MODE_MULT : 1.0)));
+        drivetrain.setDefaultCommand(
+            drivetrain.driveCommand(
+                () -> MathUtil.copyDirectionPow(
+                    MathUtil.applyDeadband(
+                        VecBuilder.fill(-driver.getLeftY(), -driver.getLeftX()),
+                        DriveConstants.JOYSTICK_DEADBAND
+                    ),
+                    DriveConstants.CONTROLLER_POW).times(DriveConstants.SLOW_MODE_MULT),
+                    () -> MathUtil.copyDirectionPow(MathUtil.applyDeadband(
+                        -driver.getRightX(),
+                        DriveConstants.JOYSTICK_DEADBAND), 
+                    DriveConstants.CONTROLLER_POW)
+                    * DriveConstants.SLOW_MODE_MULT
+            )
+        );
 
 
         shooter.setDefaultCommand(cannon.shootOTF());

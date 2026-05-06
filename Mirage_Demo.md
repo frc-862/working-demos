@@ -7,9 +7,10 @@ In order for Mirage to run properly, the following demo code for it need to do t
 - Change the hood angle based on the selected shooting power level (a.k.a Canned shots)
 - Manual turret movement
 - Keep collector and transfer code as is
-- Change swerve to slow mode by default instead of fast mode
-- Use only ONE controller to run Mirage
+- Change swerve to slow mode by default instead of fast mode (Maxim)
+- Use only ONE controller to run Mirage (Maybe)
 
+No issues, only PRs. Write your name next to something if you are working on it.
 
 ### Controls
 
