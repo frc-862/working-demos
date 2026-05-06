@@ -1,0 +1,441 @@
+// Copyright (c) FIRST and other WPILib contributors.
+// Open Source Software; you can modify and/or share it under the terms of
+// the WPILib BSD license file in the root directory of this project.
+
+package frc.robot.subsystems;
+
+import java.util.function.Supplier;
+
+import com.ctre.phoenix6.configs.CANcoderConfiguration;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.hardware.CANcoder;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+import com.ctre.phoenix6.signals.SensorDirectionValue;
+import com.ctre.phoenix6.sim.CANcoderSimState;
+import com.ctre.phoenix6.sim.ChassisReference;
+import com.ctre.phoenix6.sim.TalonFXSimState;
+
+import edu.wpi.first.math.system.plant.DCMotor;
+import static edu.wpi.first.units.Units.Amps;
+import static edu.wpi.first.units.Units.Degrees;
+import static edu.wpi.first.units.Units.Inches;
+import static edu.wpi.first.units.Units.KilogramSquareMeters;
+import static edu.wpi.first.units.Units.Meters;
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Current;
+import edu.wpi.first.units.measure.Distance;
+import edu.wpi.first.units.measure.MomentOfInertia;
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.util.datalog.BooleanLogEntry;
+import edu.wpi.first.util.datalog.DataLog;
+import edu.wpi.first.util.datalog.DoubleLogEntry;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Robot;
+import frc.robot.constants.FieldConstants;
+import frc.robot.constants.FieldConstants.Target;
+import frc.robot.constants.RobotMap;
+import frc.util.hardware.ThunderBird;
+import frc.util.shuffleboard.LightningShuffleboard;
+import frc.util.units.ThunderMap;
+import frc.util.units.ThunderUnits;
+
+public class Hood extends SubsystemBase {
+
+    public class HoodConstants {
+        public static final boolean INVERTED = false; // temp
+        public static final Current STATOR_LIMIT = Amps.of(10); // temp
+        public static final Current SUPPLY_LIMIT = Amps.of(4); // temp
+        public static final boolean SUPPLY_LIMIT_ENABLE = true; // temp
+        public static final boolean BRAKE = true; // temp
+
+        public static final Angle MIN_ANGLE = Degrees.of(50);
+        public static final Angle MAX_ANGLE = Degrees.of(80);
+
+        public static final MomentOfInertia MOI = KilogramSquareMeters.of(0.004); // Temp
+        public static final Distance MECHANISM_LENGTH = Inches.of(6);
+
+        public static final ThunderMap<Distance, Angle> HOOD_MAP = new ThunderMap<>() {
+            {
+                put(Inches.of(248), Degrees.of(70));
+                put(Inches.of(212), Degrees.of(75));
+                put(Inches.of(161), Degrees.of(77));
+                put(Inches.of(100), Degrees.of(80));
+                put(Inches.of(80), Degrees.of(80));
+            }
+        };
+
+        public static final double kS = RobotMap.IS_OASIS ? 0.05d : 0.33d;
+        public static final double kG = RobotMap.IS_OASIS ? -0.3d : 0; // negative because negative power is up
+        public static final double kP = RobotMap.IS_OASIS ? 50d : 500d;
+        public static final double kI = 0.0;
+        public static final double kD = RobotMap.IS_OASIS ? 1d : 12d;
+
+        public static final Angle POSITION_TOLERANCE = Degrees.of(0.5); // temp
+        public static final Angle BIAS_DELTA = Degrees.of(0.5); // temp
+
+        // Conversion ratios
+        public static final double ROTOR_TO_ENCODER_RATIO = !hasEncoder() ? 1 : 9*42/18d;
+        public static final double ENCODER_TO_MECHANISM_RATIO = RobotMap.IS_OASIS ? 50/22d * 156/15d : 9d * 156/15d;
+        public static final double ROTOR_TO_MECHANISM_RATIO = ROTOR_TO_ENCODER_RATIO * ENCODER_TO_MECHANISM_RATIO; // only used in sim
+
+        public static final Angle OFFSET_TO_MAX = Rotations.of(0d); // temp
+        public static final Angle ENCODER_OFFSET = OFFSET_TO_MAX.plus(MAX_ANGLE);
+        public static final DutyCycleOut HOOD_ZEROING_DC = new DutyCycleOut(0.2);
+    }
+
+    private ThunderBird motor;
+    private CANcoder encoder;
+
+    final PositionVoltage request;
+    private Angle targetAngle;
+    private MutAngle hoodBias;
+
+    private boolean hoodZeroed = false;
+    private final Timer zeroingTimer = new Timer();
+
+    private SingleJointedArmSim hoodSim;
+    private TalonFXSimState motorSim;
+    private DCMotor gearbox;
+    private MechanismLigament2d ligament;
+    private MechanismRoot2d root2d;
+    private Mechanism2d mech2d;
+    private CANcoderSimState encoderSim;
+    public boolean isHoodRetracted = false;
+    public boolean ignoreHoodRetract = false;
+
+    private DoubleLogEntry angleLog;
+    private DoubleLogEntry targetLog;
+    private DoubleLogEntry biasLog;
+    private BooleanLogEntry onTargetLog;
+
+    /** Creates a new Hood Subsystem. */
+    public Hood() {
+        motor = new ThunderBird(RobotMap.HOOD, RobotMap.CAN_BUS, HoodConstants.INVERTED, HoodConstants.STATOR_LIMIT,
+            HoodConstants.BRAKE);
+
+        // Do not instantiate if Oasis b/c Oasis doesn't have a CANcoder yet
+        if (hasEncoder()) {
+            encoder = new CANcoder(RobotMap.HOOD_ENCODER, RobotMap.CAN_BUS);
+        }
+
+        TalonFXConfiguration motorConfig = motor.getConfig();
+
+        request = new PositionVoltage(0d);
+
+        targetAngle = Degrees.zero();
+
+        hoodBias = Degrees.mutable(0);
+
+        if (hasEncoder()) {
+            CANcoderConfiguration angleConfig = new CANcoderConfiguration();
+            angleConfig.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 1d;
+            // angleConfig.MagnetSensor.MagnetOffset = Robot.isReal() ? HoodConstants.ENCODER_OFFSET.in(Rotations) : 0d;
+            angleConfig.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
+            encoder.getConfigurator().apply(angleConfig);
+        }
+
+        motorConfig.Slot0.kP = HoodConstants.kP;
+        motorConfig.Slot0.kI = HoodConstants.kI;
+        motorConfig.Slot0.kD = HoodConstants.kD;
+        motorConfig.Slot0.kS = HoodConstants.kS;
+        motorConfig.Slot0.kG = HoodConstants.kG;
+
+        if (hasEncoder()) {
+            motorConfig.Feedback.FeedbackRemoteSensorID = encoder.getDeviceID();
+            motorConfig.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
+        }
+
+        motorConfig.Feedback.SensorToMechanismRatio = HoodConstants.ENCODER_TO_MECHANISM_RATIO;
+        motorConfig.Feedback.RotorToSensorRatio = HoodConstants.ROTOR_TO_ENCODER_RATIO;
+
+        motorConfig.CurrentLimits.SupplyCurrentLimitEnable = HoodConstants.SUPPLY_LIMIT_ENABLE;
+        motorConfig.CurrentLimits.SupplyCurrentLimit = HoodConstants.SUPPLY_LIMIT.in(Amps);
+
+        motor.applyConfig(motorConfig);
+
+
+        if (Robot.isSimulation()) {
+            gearbox = DCMotor.getKrakenX44Foc(1);
+            hoodSim = new SingleJointedArmSim(
+                gearbox, 
+                HoodConstants.ENCODER_TO_MECHANISM_RATIO, 
+                HoodConstants.MOI.magnitude(), 
+                HoodConstants.MECHANISM_LENGTH.in(Meters), 
+                HoodConstants.MIN_ANGLE.in(Radians), 
+                HoodConstants.MAX_ANGLE.in(Radians),
+                false,
+                HoodConstants.MAX_ANGLE.in(Radians)
+            );
+
+            motorSim = motor.getSimState();
+            motorSim.Orientation = ChassisReference.CounterClockwise_Positive;
+            encoderSim = encoder.getSimState();
+
+            encoderSim.Orientation = ChassisReference.Clockwise_Positive;
+
+            motorSim.setRawRotorPosition(HoodConstants.MAX_ANGLE.times(HoodConstants.ROTOR_TO_MECHANISM_RATIO));
+            encoderSim.setRawPosition(HoodConstants.MAX_ANGLE.times(HoodConstants.ENCODER_TO_MECHANISM_RATIO));
+
+            mech2d = new Mechanism2d(2,  2);
+            root2d =  mech2d.getRoot("Hood", 0.2, 0.2);
+
+            ligament = root2d.append(new MechanismLigament2d("Hood", 1.5, HoodConstants.MAX_ANGLE.in(Degrees)));
+            LightningShuffleboard.send("Hood", "Mech2d", mech2d);
+        }
+
+        if (!hasEncoder()){
+            motor.setPosition(HoodConstants.MAX_ANGLE); // needs to be after config and sim
+        }
+
+        initLogging();
+    }
+
+    private void initLogging() {
+        DataLog log = DataLogManager.getLog();
+
+        angleLog = new DoubleLogEntry(log, "/Hood/Angle");
+        targetLog = new DoubleLogEntry(log, "/Hood/TargetAngle");
+        onTargetLog = new BooleanLogEntry(log, "/Hood/OnTarget");
+        biasLog = new DoubleLogEntry(log, "/Hood/Bias");
+    }
+
+    @Override
+    public void periodic() {
+        if (!hoodZeroed && DriverStation.isEnabled()) {
+            if (!zeroingTimer.isRunning()) {
+                zeroingTimer.restart();
+                motor.setControl(HoodConstants.HOOD_ZEROING_DC);
+            } else if (!motor.getVelocity().getValue().isNear(RotationsPerSecond.zero(), RotationsPerSecond.of(0.1))) {
+                zeroingTimer.restart();
+            } else if (zeroingTimer.hasElapsed(0.5)) {
+                motor.setPosition(HoodConstants.MAX_ANGLE);
+                hoodZeroed = true;
+                motor.stopMotor();
+                setPosition(targetAngle);
+                zeroingTimer.stop();
+            }
+        }
+        if (isHoodRetracted && !ignoreHoodRetract && hoodZeroed) {
+            motor.setControl(request.withPosition(HoodConstants.MAX_ANGLE));
+        }
+        updateLogging();
+    }
+
+    private void updateLogging() {
+        angleLog.append(getAngle().in(Degrees));
+        targetLog.append(getTargetAngle().in(Degrees));
+        onTargetLog.append(isOnTarget());
+        biasLog.append(getBias().in(Degrees));
+
+        if (Robot.isNTEnabled()) {
+            LightningShuffleboard.setDouble("Hood", "Angle", getAngle().in(Degrees));
+            if (hasEncoder()) {
+                LightningShuffleboard.setDouble("Hood", "CANcoder angle", encoder.getAbsolutePosition().getValue().in(Degrees));
+            }
+            LightningShuffleboard.setDouble("Hood", "Target Angle", getTargetAngle().in(Degrees));
+            LightningShuffleboard.setDouble("Hood", "Bias", getBias().in(Degrees));
+            LightningShuffleboard.setBool("Hood", "On Target", isOnTarget());
+            LightningShuffleboard.setBool("Hood", "Zeroed", hoodZeroed);
+        }
+    }
+
+    @Override
+    public void simulationPeriodic() {
+        double batteryVoltage = RobotController.getBatteryVoltage();
+        motorSim.setSupplyVoltage(batteryVoltage);
+        encoderSim.setSupplyVoltage(batteryVoltage);
+
+        hoodSim.setInputVoltage(motorSim.getMotorVoltage());
+        hoodSim.update(Robot.kDefaultPeriod);
+
+        Angle simAngle = Radians.of(hoodSim.getAngleRads());
+
+        motorSim.setRawRotorPosition(simAngle.times(HoodConstants.ROTOR_TO_MECHANISM_RATIO));
+        // motorSim.setRotorVelocity(simVeloc.times(HoodConstants.ROTOR_TO_MECHANISM_RATIO));
+
+        ligament.setAngle(simAngle.in(Degrees));
+        encoderSim.setRawPosition(simAngle.times(HoodConstants.ENCODER_TO_MECHANISM_RATIO));
+        // encoderSim.setVelocity(simVeloc.times(HoodConstants.ENCODER_TO_MECHANISM_RATIO));
+
+        LightningShuffleboard.setDouble("Hood", "Sim Angle", simAngle.in(Degrees));
+    }
+
+    private static boolean hasEncoder(){
+        return Robot.isSimulation();
+    }
+
+    /**
+     * Sets position of the hood
+     * @param position in degrees
+     */
+    public void setPosition(Angle position) {
+        targetAngle = ThunderUnits.clamp(position, HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE);
+        applyControl();
+    }
+
+    /**
+     * Changes the bias and adds hoodBias to bias. Adds a certain amount of degrees to the hood's target position.
+     * @param bias the amount of degrees to add to the hood target position going forward.
+     */
+    public void changeBias(Angle bias) {
+        hoodBias.mut_plus(bias);
+        applyControl();
+    }
+
+    public Command changeBiasCommand(Angle bias) {
+        return new InstantCommand(() -> changeBias(bias));
+    }
+
+    public void setBias(Angle bias) {
+        hoodBias.mut_replace(bias);
+        applyControl();
+    }
+
+    private void applyControl() {
+        if ((!isHoodRetracted || ignoreHoodRetract) && hoodZeroed) {
+            motor.setControl(request.withPosition(getTargetAngleWithBias()));
+        }
+    }
+
+
+    /**
+     * Gets the current angle of the hood
+     * @return current angle
+     */
+    public Angle getAngle() {
+        return motor.getPosition().getValue();
+    }
+
+    /**
+     * Gets the target angle of the hood
+     * @return target angle without the bias.
+     */
+    public Angle getTargetAngle() {
+        return targetAngle;
+    }
+
+    /**
+     * Gets the target angle with bias.
+     * @return target angle with the bias added.
+     */
+    public Angle getTargetAngleWithBias() {
+        return ThunderUnits.clamp(targetAngle.plus(hoodBias), HoodConstants.MIN_ANGLE, HoodConstants.MAX_ANGLE);
+    }
+
+    /**
+     * Gets the bias of the hood
+     * @return the bias of hood.
+     */
+    public Angle getBias() {
+        return hoodBias;
+    }
+
+    /**
+     * Returns true if the hood is on target
+     * @return
+     * True if on target, false otherwise
+     */
+    public boolean isOnTarget() {
+        return getAngle().isNear(getTargetAngleWithBias(), HoodConstants.POSITION_TOLERANCE);
+    }
+
+    public boolean isStowed() {
+        return getAngle().isNear(HoodConstants.MAX_ANGLE, HoodConstants.POSITION_TOLERANCE);
+    }
+
+    /**
+     * Stops all movement to the hood motor
+     */
+    public void stop() {
+        motor.stopMotor();
+    }
+
+    /**
+     * angle control command for hood
+     * @param hoodAngle
+     * @return the command for running the hood
+     */
+    public Command hoodCommand(Angle hoodAngle) {
+        return hoodCommand(() -> hoodAngle);
+    }
+
+    /**
+     * angle control command for hood
+     * @param hoodAngleSupplier
+     * @return the command for running the hood
+     */
+    public Command hoodCommand(Supplier<Angle> hoodAngleSupplier) {
+        return new StartEndCommand(() -> setPosition(hoodAngleSupplier.get()), () -> {}, this).until(this::isOnTarget);
+    }
+
+    /**
+     * Retracts the hood to its maximum angle ignoring the bias.
+     * @return the command for retracting the hood
+     */
+    public Command retractCommand() {
+        // do not require hood because it should run while allowing the hood to do something else (smart shoot)
+        return new StartEndCommand(() -> isHoodRetracted = true, () -> isHoodRetracted = false);
+    }
+
+
+    /**
+     * While this command is running, the hood will not be forced to retract, used for smart shoot in auton
+     * @return the command
+     */
+    public Command ignoreRetractCommand() {
+        // do not require hood because it should run while allowing the hood to do something else (smart shoot)
+        return new StartEndCommand(() -> ignoreHoodRetract = true, () -> ignoreHoodRetract = false);
+    }
+
+    /**
+     * keeps the hood pointed at the target of the Robot.
+     * @param cannon
+     * @return Command for repositioning the hood.
+     */
+    public Command hoodAim(Cannon cannon){
+        return run(() -> {
+            Distance distance = Meters.of(cannon.getShooterTranslation().getDistance(cannon.getTargetTranslation()));
+            Angle targetAngle = HoodConstants.HOOD_MAP.get(distance);
+            setPosition(targetAngle);
+        });
+    }
+
+    /**
+     * Aims the hood at the target
+     * @param cannon The cannon
+     * @param target The target
+     * @return the command
+     */
+    public Command hoodAim(Cannon cannon, Target target){
+        return run(() -> {
+            Distance distance = Meters.of(cannon.getShooterTranslation().getDistance(FieldConstants.getTargetData(target)));
+            Angle targetAngle = HoodConstants.HOOD_MAP.get(distance);
+            setPosition(targetAngle);
+        });
+    }
+
+    /**
+     * A command to set the posiiton of the hood
+     * @param angle the angle to set it at
+     * @return the command
+     */
+    public Command setPositionCommand(Angle angle) {
+        return new InstantCommand(() -> setPosition(angle));
+    }
+}
