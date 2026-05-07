@@ -3,18 +3,14 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot.subsystems;
 
-import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
-import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation3d;
-import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import static edu.wpi.first.units.Units.Amps;
@@ -31,7 +27,6 @@ import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Current;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.units.measure.MomentOfInertia;
-import edu.wpi.first.units.measure.MutAngle;
 import edu.wpi.first.util.datalog.BooleanLogEntry;
 import edu.wpi.first.util.datalog.DataLog;
 import edu.wpi.first.util.datalog.DoubleLogEntry;
@@ -45,12 +40,8 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
-import edu.wpi.first.wpilibj2.command.RunCommand;
-import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
-import frc.robot.constants.FieldConstants;
-import frc.robot.constants.FieldConstants.Target;
 import frc.robot.constants.RobotMap;
 import frc.util.hardware.ThunderBird;
 import frc.util.shuffleboard.LightningShuffleboard;
@@ -77,8 +68,6 @@ public class Turret extends SubsystemBase {
         public static final double kS = 0.55d;
         public static final double kV = 4.7d; // ~12V / (motorFreeSpeed / gearRatio) ≈ 12 / 2.58
 
-        public static final double kV_FEEDFORWARD = 21d;
-
         public static final double ENCODER_TO_MECHANISM_RATIO = 93d / 12d * 5d;
 
         public static final Angle ZERO_ANGLE = Degrees.of(-1.2);
@@ -98,7 +87,6 @@ public class Turret extends SubsystemBase {
     private Angle targetPosition = Rotations.zero();
 
     public final PositionVoltage positionVoltage = new PositionVoltage(0);
-    private final DutyCycleOut dutyCycle = new DutyCycleOut(0.0);
 
     private DCMotor gearbox;
     private SingleJointedArmSim turretSim;
@@ -115,8 +103,6 @@ public class Turret extends SubsystemBase {
     private boolean zeroed;
     private boolean lsTriggeredOnLastLoopRun;
 
-    private boolean manual;
-
     private final Swerve drivetrain;
 
     private DoubleLogEntry targetPositionLog;
@@ -124,9 +110,6 @@ public class Turret extends SubsystemBase {
     private BooleanLogEntry onTargetLog;
     private BooleanLogEntry zeroLimitSwitchLog;
     private BooleanLogEntry maxLimitSwitchLog;
-
-    private MutAngle turretBias = Degrees.mutable(0);
-    private Angle manualAngle = Degrees.zero();
 
     /**
      * Creates a new Turret Subsystem.
@@ -185,8 +168,6 @@ public class Turret extends SubsystemBase {
 
             LightningShuffleboard.send("Turret", "mech 2d", mech2d);
         }
-
-        manual = false;
 
         initLogging();
     }
@@ -272,31 +253,15 @@ public class Turret extends SubsystemBase {
     }
 
     /**
-     * sets angle of the turret with an angular velocity feedforward
+     * sets angle of the turret
      *
-     * @param angle sets the angle to the motor of the turret
-     * @param chassisOmegaRadPerSec the angular velocity of the chassis
-     * @param hubRadPerSec the angular velocity of the hub
-     */
-    public void setAngle(Angle angle, AngularVelocity chassisOmegaRadPerSec, AngularVelocity hubRadPerSec) {
-        targetPosition = optimizeTurretAngle(angle);
-        if (zeroed && !manual) { // only allow position control if turret has been zeroed but store to apply when zeroed
-            double feedforwardVolts = -chassisOmegaRadPerSec.in(RotationsPerSecond) * TurretConstants.kV_FEEDFORWARD; // feedforward to counteract chassis rotation
-            feedforwardVolts += -hubRadPerSec.in(RotationsPerSecond) * TurretConstants.kV_FEEDFORWARD; // add feedforward for hub velocity as well
-            
-            motor.setControl(positionVoltage
-                .withPosition(targetPosition)
-                .withFeedForward(feedforwardVolts));
-        }
-    }
-
-    /**
-     * sets angle of the turret without any feedforward
-     * 
      * @param angle sets the angle to the motor of the turret
      */
     public void setAngle(Angle angle) {
-        setAngle(angle, RadiansPerSecond.zero(), RadiansPerSecond.zero());
+        targetPosition = optimizeTurretAngle(angle);
+        if (zeroed) { // only allow position control if turret has been zeroed but store to apply when zeroed
+            motor.setControl(positionVoltage.withPosition(targetPosition));
+        }
     }
 
     /**
@@ -317,27 +282,6 @@ public class Turret extends SubsystemBase {
         return targetPosition;
     }
 
-    public void setPower(double power) {
-        if (!manual){
-            motor.setControl(dutyCycle.withOutput(power));
-        }
-    }
-
-    public void setPowerManual(double power) {
-        if (manual) {
-            motor.setControl(dutyCycle.withOutput(power));
-        }
-    }
-
-    public Command setManualPowerCommand(DoubleSupplier power) {
-        return new RunCommand(() -> {
-            turretBias.mut_plus(Degrees.of(power.getAsDouble()));
-            if(manual) {
-                motor.setControl(positionVoltage
-                .withPosition(optimizeTurretAngle(manualAngle.plus(turretBias))));
-            }
-        });
-    }
 
     public boolean isOnTarget(Angle tolerance) {
         return getTargetAngle().isNear(getAngle(), tolerance) && zeroed;
@@ -411,33 +355,6 @@ public class Turret extends SubsystemBase {
         return desired;
     }
 
-    public void turretAim(Pose2d turretPose, Target target, AngularVelocity chassisOmegaRadPerSec, AngularVelocity hubRadPerSec) {
-        Translation2d delta = FieldConstants.getTargetData(target).minus(turretPose.getTranslation());
-
-        Angle fieldAngle = delta.getAngle().getMeasure();
-
-        Angle turretAngle = fieldAngle.minus(turretPose.getRotation().getMeasure());
-
-        setAngle(turretAngle, chassisOmegaRadPerSec, hubRadPerSec);
-    }
-
-    public Command turretAimCommand(Supplier<Pose2d> turretPose, Supplier<Target> target, Supplier<AngularVelocity> chassisOmegaRadPerSec, Supplier<AngularVelocity> hubRadPerSec) {
-        return run(() -> turretAim(turretPose.get(), target.get(), chassisOmegaRadPerSec.get(), hubRadPerSec.get()));
-    }
-
-    public Command turretAimCommand(Cannon cannon) {
-        return turretAimCommand(
-            () -> new Pose2d(cannon.getShooterTranslation(), drivetrain.getPose().getRotation()),
-            () -> cannon.getTarget(),
-            () -> cannon.getRobotAngularVelocity(),
-            () -> cannon.getHubAngularVelocity(drivetrain.getPose())
-        );
-    }
-
-    public Command setAngleCommand(Angle angle) {
-        return new InstantCommand(() -> setAngle(angle));
-    }
-
     /**
      * Returns a command to set the angle of the turret
      *
@@ -450,21 +367,5 @@ public class Turret extends SubsystemBase {
 
     public boolean getZeroed() {
         return zeroed;
-    }
-
-    public Command manual() {
-        return new StartEndCommand(() -> {
-            turretBias.mut_replace(Degrees.zero());
-            manualAngle = getAngle();
-            stop();
-            manual = true;
-        }, () -> {
-            manual = false;
-            turretBias.mut_replace(Degrees.zero());
-        });
-    }
-
-    public boolean getManual() {
-        return manual;
     }
 }
