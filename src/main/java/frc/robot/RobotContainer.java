@@ -6,13 +6,11 @@ package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.auto.NamedCommands;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
-
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -133,7 +131,6 @@ public class RobotContainer {
         shooter.setDefaultCommand(cannon.shootOTF());
 //         collector.setDefaultCommand(collector.neutralPivotCommand());
         hood.setDefaultCommand(cannon.hoodAim());
-        turret.setDefaultCommand(cannon.turretAim());
     }
 
     private void configureBindings() {

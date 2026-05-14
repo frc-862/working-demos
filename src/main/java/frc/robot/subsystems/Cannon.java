@@ -8,6 +8,7 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import static edu.wpi.first.units.Units.Degree;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.Inches;
 import static edu.wpi.first.units.Units.Meters;
@@ -15,9 +16,6 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Seconds;
-
-import java.sql.Struct;
-
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Distance;
@@ -32,11 +30,9 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
-import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.WaitUntilCommand;
 import frc.robot.Robot;
-import frc.robot.constants.DriveConstants;
 import frc.robot.constants.FieldConstants;
 import frc.robot.constants.FieldConstants.Target;
 import frc.robot.subsystems.Indexer.IndexerConstants;
@@ -70,6 +66,10 @@ public class Cannon extends SubsystemBase {
         public static final CandShot LEFT_SHOT = new CandShot(Degrees.of(0), Degrees.of(63), RotationsPerSecond.of(55)); //Temp
         public static final CandShot RIGHT_SHOT = new CandShot(Degrees.of(0), Degrees.of(63), RotationsPerSecond.of(55)); //Temp
         public static final CandShot MIDDLE_SHOT = new CandShot(Degrees.of(0), Degrees.of(80), RotationsPerSecond.of(53)); //Temp
+
+        public static final CandShot LOW_DISTANCE = new CandShot(Degree.of(0), Degrees.of(70), RotationsPerSecond.of(35)); //Temp
+        public static final CandShot MIDDLE_DISTANCE = new CandShot(Degree.of(0), Degrees.of(65), RotationsPerSecond.of(45)); //Temp
+        public static final CandShot HIGH_DISTANCE = new CandShot(Degree.of(0), Degrees.of(60), RotationsPerSecond.of(55)); //Temp
 
         public static final Distance SHOOT_DISTANCE_BIAS = Inches.of(6);
     }
@@ -224,21 +224,6 @@ public class Cannon extends SubsystemBase {
     }
 
     /**
-     * Returns a command to set the hood and shooter values
-     * @param turretAngle the angle to set the turret to
-     * @param hoodAngle the angle to set the hood to
-     * @param shooterVelocity the velocity to set the shooter to 
-     * @return The command
-     */
-    public Command createCannonCommand(Angle turretAngle, Angle hoodAngle, AngularVelocity shooterVelocity) {
-        return new ParallelCommandGroup(
-            shooter.shootCommand(shooterVelocity), 
-            turret.setAngleCommand(turretAngle), 
-            hood.setPositionCommand(hoodAngle)
-        );
-    }
-
-    /**
      * Creates a cand shot command that uses only hood and shooter
      * @param value The cand shot value
      * @return The command
@@ -258,18 +243,6 @@ public class Cannon extends SubsystemBase {
     }
 
     /**
-     * Creates a cand shot command that also uses turret
-     * @param value The cand shot to use
-     * @return The command
-     */
-    public Command createTurretCandShotCommand(CannonConstants.CandShot value) {
-      return new ParallelCommandGroup(
-            createCannonCommand(value.turretAngle, value.hoodAngle, value.shooterVelocity).andThen(hood.idle(), shooter.idle()),
-            indexWhenOnTarget()
-        );
-    }
-
-    /**
      * Sets the hood angle at a predetermined target by cannon
      * @return The command
      */
@@ -284,14 +257,6 @@ public class Cannon extends SubsystemBase {
      */
     public Command hoodAim(Target target) {
         return hood.hoodAim(this, target);
-    }
-
-    /**
-     * Aims the turret at a predetermined target
-     * @return The command
-     */
-    public Command turretAim() {
-        return turret.turretAimCommand(this);
     }
 
     /**
@@ -353,9 +318,7 @@ public class Cannon extends SubsystemBase {
             }
 
             futurePoseLog.append(futurePose);
-
-            turret.turretAim(new Pose2d(getShooterTranslation(futurePose), futurePose.getRotation()), getTarget(), getRobotAngularVelocity(), getHubAngularVelocity(futurePose));
-      }, turret, shooter, hood);
+      }, shooter, hood);
     
     //   .alongWith(drivetrain.increaseRampRates())
     //   .alongWith(drivetrain.lowerSupplyLimits());    
