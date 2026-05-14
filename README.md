@@ -10,7 +10,8 @@ There should be minimal changes to any robots.
 - Sparkplug
 - Cheese
 - Void
+- Rhapsody
 
 ### TODO:
-- Greg
-- Rhapsody (currently in Rhapsody Repo)
+- Greg (mechnically bad)
+
