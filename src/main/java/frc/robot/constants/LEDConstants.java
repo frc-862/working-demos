@@ -15,7 +15,6 @@ public class LEDConstants {
         TEST,
         TURRET_MANUAL,
         TURRET_BAD,
-        VISION_BAD,
         SEED_FIELD_FORWARD,
         NEAR_HUB,
         AUTO,

@@ -41,7 +41,6 @@ import frc.robot.subsystems.Hood.HoodConstants;
 import frc.robot.subsystems.Indexer;
 import frc.robot.subsystems.Indexer.IndexerConstants;
 import frc.robot.subsystems.MapleSim;
-import frc.robot.subsystems.PhotonVision;
 import frc.robot.subsystems.Shooter;
 import frc.robot.subsystems.Shooter.ShooterConstants;
 import frc.robot.subsystems.Swerve;
@@ -69,7 +68,6 @@ public class RobotContainer {
     private final LEDSubsystem leds;
     public final PowerDistribution pdh;
     @SuppressWarnings("unused")
-    private final PhotonVision vision;
     private final Telemetry logger;
     private final Cannon cannon;
 
@@ -80,8 +78,6 @@ public class RobotContainer {
         copilot = new XboxController(RobotMap.COPILOT_PORT);
 
         drivetrain = DriveConstants.createDrivetrain();
-        // Update pose from vision before other subsystems so they use updated pose
-        vision = new PhotonVision(drivetrain);
 
         logger = new Telemetry(DriveConstants.MaxSpeed.in(MetersPerSecond));
         leds = new LEDSubsystem(LED_STATES.values().length, LEDConstants.LED_COUNT, LEDConstants.LED_PWM_PORT);
@@ -233,11 +229,9 @@ public class RobotContainer {
 
         leds.setBehavior(LED_STATES.TEST.id(), LEDBehaviorFactory.testStrip(LEDConstants.stripAll,
                 () -> turret.getMaxLimitSwitch(),
-                () -> turret.getZeroLimitSwitch(),
-                () -> vision.getMacMiniConnection()
+                () -> turret.getZeroLimitSwitch()
         ));
         leds.setBehavior(LED_STATES.TURRET_MANUAL.id(), LEDBehaviorFactory.blink(LEDConstants.stripAll, 2, Color.GREY));
-        leds.setBehavior(LED_STATES.VISION_BAD.id(), LEDBehaviorFactory.solid(LEDConstants.stripUnderglow, Color.RED));
         leds.setBehavior(LED_STATES.TURRET_BAD.id(), LEDBehaviorFactory.pulse(LEDConstants.stripShooter, 2, Color.ORANGE));
 
         leds.setBehavior(LED_STATES.SEED_FIELD_FORWARD.id(), LEDBehaviorFactory.rainbow(LEDConstants.stripAll, 2));
@@ -255,9 +249,6 @@ public class RobotContainer {
         new Trigger(() -> !turret.getZeroed() && DriverStation.isDisabled()).whileTrue(leds.enableState(LED_STATES.TURRET_BAD.id()));
 
         new Trigger(new LEDBooleanSupplier(turret::getZeroed)).whileFalse(leds.enableState(LED_STATES.TURRET_BAD.id())); // turn off turret bad LED state once turret is zeroed
-
-        // Turn off the "vision bad" LED state once the drivetrain has moved away from the origin, indicating we likely have a valid pose estimate.
-        new Trigger(new LEDBooleanSupplier(() -> (DriverStation.isDisabled() && drivetrain.getPose().getTranslation().getDistance(new Translation2d()) < 0.1))).whileTrue(leds.enableState(LED_STATES.VISION_BAD.id()));
 
         new Trigger(new LEDBooleanSupplier(DriverStation::isDisabled)).whileTrue(leds.enableState(LED_STATES.TEST.id()));
         
