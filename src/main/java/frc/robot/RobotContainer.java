@@ -10,7 +10,6 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Translation2d;
 import static edu.wpi.first.units.Units.Degrees;
 import static edu.wpi.first.units.Units.MetersPerSecond;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -122,28 +121,15 @@ public class RobotContainer {
                     * DriveConstants.SLOW_MODE_MULT
             )
         );
-
-
-        shooter.setDefaultCommand(cannon.shootOTF());
-//         collector.setDefaultCommand(collector.neutralPivotCommand());
-        hood.setDefaultCommand(cannon.hoodAim());
     }
 
     private void configureBindings() {
 
-        /* Driver */
-        new Trigger(driver::getXButton).whileTrue(drivetrain.brakeCommand());
-
-        // new Trigger(driver::getYButton).whileTrue(turret.zero());
-        
-        // TODO: Bind OTF to LB and Climb AA to RB
-        new Trigger(() -> copilot.getBButton() && !cannon.isInNoPassingZone()).whileTrue(cannon.shootOTF().alongWith(cannon.indexWhenOnTarget()));
-
         // change biases for the driver
-        new Trigger(() -> driver.getPOV() == DriveConstants.DPAD_UP).onTrue(hood.changeBiasCommand(HoodConstants.BIAS_DELTA.unaryMinus()));
-        new Trigger(() -> driver.getPOV() == DriveConstants.DPAD_DOWN).onTrue(hood.changeBiasCommand(HoodConstants.BIAS_DELTA));
-        new Trigger(() -> driver.getPOV() == DriveConstants.DPAD_LEFT).onTrue(shooter.changeBiasCommand(ShooterConstants.BIAS_DELTA.unaryMinus()));
-        new Trigger(() -> driver.getPOV() == DriveConstants.DPAD_RIGHT).onTrue(shooter.changeBiasCommand(ShooterConstants.BIAS_DELTA));
+        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_UP).onTrue(hood.changeBiasCommand(HoodConstants.BIAS_DELTA.unaryMinus()));
+        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_DOWN).onTrue(hood.changeBiasCommand(HoodConstants.BIAS_DELTA));
+        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_LEFT).onTrue(shooter.changeBiasCommand(ShooterConstants.BIAS_DELTA.unaryMinus()));
+        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_RIGHT).onTrue(shooter.changeBiasCommand(ShooterConstants.BIAS_DELTA));
 
         // reset the field-centric heading
         new Trigger(() -> (driver.getStartButton() && driver.getBackButton()))
@@ -151,13 +137,8 @@ public class RobotContainer {
             .onTrue(leds.enableStateWithTimeout(LEDConstants.LED_STATES.SEED_FIELD_FORWARD.id(), 1));
 
         drivetrain.registerTelemetry(logger::telemeterize);
-
-        new Trigger(() -> driver.getLeftTriggerAxis() > DriveConstants.TRIGGER_DEADBAND).whileTrue(collector.driverStowPivotCommand());
-
         /* Copilot */ 
-        new Trigger(() -> drivetrain.isNearTrench()).whileTrue(hood.retractCommand());
-        // new Trigger(copilot::getXButton).whileTrue(hood.retractCommand().withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
-
+        
         new Trigger(copilot::getLeftBumperButton).whileTrue(indexer.indexCommand(-IndexerConstants.SPINDEXDER_POWER,
             -IndexerConstants.TRANSFER_POWER));
         new Trigger(copilot::getRightBumperButton).whileTrue(indexer.indexCommand(IndexerConstants.SPINDEXDER_POWER,
@@ -170,12 +151,10 @@ public class RobotContainer {
 
         new Trigger(() -> Math.abs(copilot.getRightX()) > TurretConstants.MANUAL_CONTROL_DEADBAND).whileTrue(turret.setAngleCommand(() -> Degrees.of(copilot.getRightX())));
 
-        // Temp Cand shots
-        //RIGHT_, LEFT_, and MIDDLE_ are all set to 0, so temp shots wont work right now
-        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_RIGHT).whileTrue(cannon.createCandShotCommand(CannonConstants.RIGHT_SHOT).deadlineFor(rumble()));
-        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_LEFT).whileTrue(cannon.createCandShotCommand(CannonConstants.LEFT_SHOT).deadlineFor(rumble()));
-        new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_UP).whileTrue(cannon.createCandShotCommand(CannonConstants.MIDDLE_SHOT).deadlineFor(rumble()));
-            
+        new Trigger(() -> copilot.getYButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.HIGH));
+        new Trigger(() -> copilot.getAButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.SHORT));
+        new Trigger(() -> copilot.getBButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.MEDIUM));
+        new Trigger(() -> copilot.getXButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.LONG));
         //  new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_DOWN).whileTrue(
         //     shooter.shootCommand(() -> RotationsPerSecond.of(LightningShuffleboard.getDouble("Shooter", "RPS", 65)))
         //     .alongWith(hood.hoodCommand(() -> Degrees.of(LightningShuffleboard.getDouble("Hood", "Setpoint (Degrees)", 80))))
@@ -206,7 +185,6 @@ public class RobotContainer {
         NamedCommands.registerCommand("LED_CLIMB", leds.enableStateWithTimeout(LED_STATES.CLIMB.id(), 2));
 
         NamedCommands.registerCommand("MOVE_TO_TOWER", drivetrain.autoAlign(FieldConstants.getPose(FieldConstants.TOWER_POSITION)));
-        NamedCommands.registerCommand("SMART_SHOOT", cannon.shootOTF().alongWith(hood.ignoreRetractCommand()).deadlineFor(leds.enableState(LED_STATES.SHOOT.id())));
         NamedCommands.registerCommand("COLLECT", collector.collectCommand(() -> CollectorConstants.COLLECT_POWER).deadlineFor(leds.enableState(LED_STATES.COLLECT.id())));
         NamedCommands.registerCommand("DEPLOY_COLLECTOR", collector.deployPivotCommand());
         NamedCommands.registerCommand("STOW_COLLECTOR", collector.stowPivotCommand());
@@ -251,12 +229,7 @@ public class RobotContainer {
         new Trigger(new LEDBooleanSupplier(turret::getZeroed)).whileFalse(leds.enableState(LED_STATES.TURRET_BAD.id())); // turn off turret bad LED state once turret is zeroed
 
         new Trigger(new LEDBooleanSupplier(DriverStation::isDisabled)).whileTrue(leds.enableState(LED_STATES.TEST.id()));
-        
-        //Turn on the NEAR_HUB light when it is near the HUB.
-        new Trigger(() -> cannon.isNearHub()).whileTrue(leds.enableState(LED_STATES.NEAR_HUB.id()));
 
-        // Turn on the NEAR_HUB light when in no passing zone
-        new Trigger(() -> cannon.isInNoPassingZone()).whileTrue(leds.enableState(LED_STATES.NEAR_HUB.id()));
     }
 
         /**

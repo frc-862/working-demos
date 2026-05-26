@@ -50,26 +50,12 @@ public class Cannon extends SubsystemBase {
         public static final Transform2d SHOOTER_TRANSFORM = new Transform2d(SHOOTER_TRANSLATION, new Rotation2d());
         public static final Distance SHOOTER_HEIGHT = Inches.of(18);
 
-        public record CandShot(Angle turretAngle, Angle hoodAngle, AngularVelocity shooterVelocity){};
-
-        public static final ThunderMap<Distance, Time> TIME_OF_FLIGHT_MAP = new ThunderMap<Distance, Time>() {{
-            put(Inches.of(248), Seconds.of(3.45-2.12));
-            put(Inches.of(212), Seconds.of(1.55));
-            put(Inches.of(161), Seconds.of(1.1));
-            put(Inches.of(100), Seconds.of(0.95));
-            put(Inches.of(80), Seconds.of(0.95));
-        }};
-
-        public static final int MAX_OTF_ITERATIONS = 10;
-        public static final Distance OTF_TOLERANCE = Inches.of(1.5);
+        public record CandShot(Angle hoodAngle, AngularVelocity shooterVelocity){};
       
-        public static final CandShot LEFT_SHOT = new CandShot(Degrees.of(0), Degrees.of(63), RotationsPerSecond.of(55)); //Temp
-        public static final CandShot RIGHT_SHOT = new CandShot(Degrees.of(0), Degrees.of(63), RotationsPerSecond.of(55)); //Temp
-        public static final CandShot MIDDLE_SHOT = new CandShot(Degrees.of(0), Degrees.of(80), RotationsPerSecond.of(53)); //Temp
-
-        public static final CandShot LOW_DISTANCE = new CandShot(Degree.of(0), Degrees.of(70), RotationsPerSecond.of(35)); //Temp
-        public static final CandShot MIDDLE_DISTANCE = new CandShot(Degree.of(0), Degrees.of(65), RotationsPerSecond.of(45)); //Temp
-        public static final CandShot HIGH_DISTANCE = new CandShot(Degree.of(0), Degrees.of(60), RotationsPerSecond.of(55)); //Temp
+        public static final CandShot HIGH = new CandShot(Degrees.of(80), RotationsPerSecond.of(50));
+        public static final CandShot SHORT = new CandShot(Degrees.of(70), RotationsPerSecond.of(35));
+        public static final CandShot MEDIUM = new CandShot(Degrees.of(65), RotationsPerSecond.of(45));
+        public static final CandShot LONG = new CandShot(Degrees.of(60), RotationsPerSecond.of(55));
 
         public static final Distance SHOOT_DISTANCE_BIAS = Inches.of(6);
     }
@@ -146,7 +132,6 @@ public class Cannon extends SubsystemBase {
             LightningShuffleboard.setPose2d("Cannon", "Target Pose", new Pose2d(getTargetTranslation(), new Rotation2d()));
             LightningShuffleboard.setDouble("Cannon", "Distance To Target", getTargetDistance().in(Meters));
             LightningShuffleboard.setPose2d("Cannon", "Turret Position", new Pose2d(getShooterTranslation(), new Rotation2d()));
-            LightningShuffleboard.setBool("Cannon", "In No Passing Zone", isInNoPassingZone());
         }
     }
 
@@ -229,17 +214,11 @@ public class Cannon extends SubsystemBase {
      * @return The command
      */
     public Command createCandShotCommand(CannonConstants.CandShot value) {
-        return new ParallelCommandGroup(
-            createCannonCommand(value.hoodAngle, value.shooterVelocity).andThen(hood.idle(), shooter.idle()),
-            
-            indexWhenOnTarget()
-        ).handleInterrupt(() -> {
+        return createCannonCommand(value.hoodAngle, value.shooterVelocity)            
+        .handleInterrupt(() -> {
             shooter.stop();
-            turret.stop();
             hood.stop();
-            indexer.stop();
         });
-        
     }
 
     /**
@@ -259,80 +238,6 @@ public class Cannon extends SubsystemBase {
         return hood.hoodAim(this, target);
     }
 
-    /**
-     * Remodel of shooter aim-- automatically decides when to shoot
-     * @return The command to run
-     */
-    public Command smartShoot() {
-        return shooter.runShootCommand(() -> Shooter.ShooterConstants.VELOCITY_MAP.get(getTargetDistance()))
-        .alongWith(new SequentialCommandGroup(
-            new WaitUntilCommand(() -> turret.isOnTarget() && hood.isOnTarget() && shooter.isOnTarget() && !isNearHub()),
-            indexer.autoIndex(IndexerConstants.SPINDEXDER_POWER, IndexerConstants.TRANSFER_POWER)
-        )
-        .finallyDo((end) -> {
-            shooter.setPower(ShooterConstants.COAST_DC);
-            indexer.stop();
-        }));
-    }
-
-    /**
-     * YAY
-     * @return DA OTFFF
-     */
-    public Command shootOTF() {
-        return new RunCommand(() -> { // hi david (from Bea)
-            Time tof;
-
-            Pose2d previousPose;
-            Pose2d futurePose = drivetrain.getPose();  
-
-            Distance futureDist = getTargetDistance(); 
-
-            for (int i = 0; i < CannonConstants.MAX_OTF_ITERATIONS; i++) {
-                tof = CannonConstants.TIME_OF_FLIGHT_MAP.get(futureDist);
-
-                previousPose = futurePose;
-                futurePose = drivetrain.getFuturePoseFromTime(tof);
-
-                futureDist = getTargetDistance(futurePose);
-
-                if (Math.abs(futurePose.minus(previousPose).getTranslation().getNorm()) < CannonConstants.OTF_TOLERANCE.in(Meters)) {
-                    break;
-                }
-            }
-
-            Distance mapDist = futureDist;
-
-            if (DriverStation.isTeleop()) {
-                mapDist = futureDist.minus(Inches.of(LightningShuffleboard.getDouble("Cannon", "Shooter Distance Bias", 8)));
-            }
-           
-            Angle hoodAngle = Hood.HoodConstants.HOOD_MAP.get(mapDist);
-            AngularVelocity shooterVelocity = Shooter.ShooterConstants.VELOCITY_MAP.get(mapDist);
-
-            hood.setPosition(hoodAngle);
-            shooter.setVelocity(shooterVelocity);
-
-            if (!DriverStation.isFMSAttached()) {
-                LightningShuffleboard.setPose2d("Cannon", "Future Pose", futurePose);
-            }
-
-            futurePoseLog.append(futurePose);
-      }, shooter, hood);
-    
-    //   .alongWith(drivetrain.increaseRampRates())
-    //   .alongWith(drivetrain.lowerSupplyLimits());    
-      
-    }
-
-    /**
-     * finds the distance between shooter and hub and calculates if it is nearby.
-     * @return if the distance of shooter on the field and the hub is less than 1
-     */
-    public boolean isNearHub() {
-          Distance distance = Meters.of(this.getShooterTranslation().getDistance(FieldConstants.getTargetData(FieldConstants.GOAL_POSITION)));
-          return distance.lt(CannonConstants.SMART_SHOOT_MIN_DISTANCE);
-    }
     
     /**
      * starts the indexer when the hood, turret, and shooter is on target.
@@ -343,15 +248,6 @@ public class Cannon extends SubsystemBase {
             new WaitUntilCommand(() -> isOnTarget()),
             indexer.autoIndex(IndexerConstants.SPINDEXDER_POWER, Indexer.IndexerConstants.TRANSFER_POWER)
         );
-    }
-
-    /**
-     * Checks if the cannon is in between the tower and hub on the opposite alliance zone
-     * @return if the cannon is in the no passing zone
-     */
-    public boolean isInNoPassingZone() {
-        return AllianceHelpers.isBlueAlliance() ? FieldConstants.RED_NO_PASSING_ZONE.contains(getShooterTranslation()) 
-            : FieldConstants.BLUE_NO_PASSING_ZONE.contains(getShooterTranslation());
     }
 
     /**
