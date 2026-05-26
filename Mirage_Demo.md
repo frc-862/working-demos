@@ -16,7 +16,8 @@ No issues, only PRs. Write your name next to something if you are working on it.
 ## Controls
 
 ### Driver
-
+- Left Stick Drive
+- Right Stick X Turn
 - Start + back restart field centric
 
 

@@ -167,17 +167,9 @@ public class RobotContainer {
         // new Trigger(() -> copilot.getPOV() == DriveConstants.DPAD_DOWN).whileTrue(hood.hoodCommand(() -> 
         //     Degrees.of(LightningShuffleboard.getDouble("Hood", "Setpoint (Degrees)", 80))));
 
-        new Trigger(() -> (hood.isOnTarget() && shooter.isOnTarget() && turret.isOnTarget()))
-        .whileTrue(new StartEndCommand(() -> copilot.setRumble(GenericHID.RumbleType.kBothRumble, 1d), () -> copilot.setRumble(GenericHID.RumbleType.kBothRumble, 0d)));
-
         // new Trigger(() -> DriverStation.isEnabled()).onTrue(hood.zeroCommand());
 
-        new Trigger(copilot::getAButton).whileTrue(indexer.autoIndex(IndexerConstants.SPINDEXDER_POWER, IndexerConstants.TRANSFER_POWER)).onFalse(new InstantCommand(() -> indexer.stop()));
-
-        new Trigger(copilot::getYButton).whileTrue(indexer.indexCommand(-0.5).withTimeout(0.1).andThen(indexer.indexCommand(1)));
-
-        new Trigger(driver::getXButton).whileTrue(new InstantCommand(() -> drivetrain.resetPose(new Pose2d(12.566, 0.713, new Rotation2d(0.057)))));
-    }
+        }
     
     private void configureNamedCommands() {
         NamedCommands.registerCommand("LED_SHOOT", leds.enableStateWithTimeout(LED_STATES.SHOOT.id(), 2));
