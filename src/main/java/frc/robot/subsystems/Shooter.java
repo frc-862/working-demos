@@ -110,6 +110,8 @@ public class Shooter extends SubsystemBase {
     private BooleanLogEntry onTargetLog;
     private DoubleLogEntry leftVelocityLog;
     private DoubleLogEntry rightVelocityLog;
+    
+    public double shootMult = 1.0;
 
     /** Creates a new Shooter Subsystem. */
     public Shooter() {
@@ -174,6 +176,8 @@ public class Shooter extends SubsystemBase {
 
     @Override
     public void periodic() {
+        shootMult = LightningShuffleboard.getDouble("Demo", "Shoot Multiplier", shootMult);
+
         updateLogging();
     }
 
@@ -224,7 +228,7 @@ public class Shooter extends SubsystemBase {
      * @param velocity
      */
     public void setVelocity(AngularVelocity velocity){
-        targetVelocity = velocity;
+        targetVelocity = velocity.times(shootMult);
         applyChange();
     }
 
@@ -302,7 +306,7 @@ public class Shooter extends SubsystemBase {
      * @return the command for running the shooter
      */
     public Command shootCommand(Supplier<AngularVelocity> velocitySupplier) {
-        return new StartEndCommand(() -> setVelocity(velocitySupplier.get()), () -> {}, this).until(this::isOnTarget);
+        return new StartEndCommand(() -> setVelocity(velocitySupplier.get()), () -> {}, this);
     }
 
     /**

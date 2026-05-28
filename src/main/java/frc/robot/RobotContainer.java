@@ -113,12 +113,12 @@ public class RobotContainer {
                         VecBuilder.fill(-driver.getLeftY(), -driver.getLeftX()),
                         DriveConstants.JOYSTICK_DEADBAND
                     ),
-                    DriveConstants.CONTROLLER_POW).times(DriveConstants.SLOW_MODE_MULT),
+                    DriveConstants.CONTROLLER_POW).times(DriveConstants.driveMult),
                     () -> MathUtil.copyDirectionPow(MathUtil.applyDeadband(
                         -driver.getRightX(),
                         DriveConstants.JOYSTICK_DEADBAND), 
                     DriveConstants.CONTROLLER_POW)
-                    * DriveConstants.SLOW_MODE_MULT
+                    * DriveConstants.driveMult
             )
         );
     }
@@ -149,7 +149,7 @@ public class RobotContainer {
         new Trigger(() -> (copilot.getRightTriggerAxis() > DriveConstants.TRIGGER_DEADBAND || copilot.getLeftTriggerAxis() > DriveConstants.TRIGGER_DEADBAND)  && !(driver.getLeftTriggerAxis() > DriveConstants.TRIGGER_DEADBAND))
             .whileTrue(collector.collectCommand(() -> (copilot.getRightTriggerAxis() - copilot.getLeftTriggerAxis()) *  CollectorConstants.COLLECT_MULT).withInterruptBehavior(InterruptionBehavior.kCancelIncoming));
 
-        new Trigger(() -> Math.abs(copilot.getRightX()) > TurretConstants.MANUAL_CONTROL_DEADBAND).whileTrue(turret.setAngleCommand(() -> Degrees.of(copilot.getRightX())));
+        new Trigger(() -> Math.abs(copilot.getRightX()) > TurretConstants.MANUAL_CONTROL_DEADBAND).whileTrue(turret.changeAngleCommand(() -> Degrees.of(copilot.getRightX())));
 
         new Trigger(() -> copilot.getYButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.HIGH));
         new Trigger(() -> copilot.getAButton()).whileTrue(cannon.createCandShotCommand(CannonConstants.SHORT));

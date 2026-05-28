@@ -79,7 +79,7 @@ public class DriveConstants {
     public static final SwerveRequest.SwerveDriveBrake brakeRequest = new SwerveRequest.SwerveDriveBrake();
     public static final SwerveRequest.ApplyRobotSpeeds autonRequest = new SwerveRequest.ApplyRobotSpeeds();
 
-    public static final double SLOW_MODE_MULT = 0.4;
+    public static double driveMult = 0.4;
 
 
     public static final PIDConstants TRANSLATION_PID = new PIDConstants(5, 0, 0); // TODO: Tune

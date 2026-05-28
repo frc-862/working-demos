@@ -40,6 +40,7 @@ import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Robot;
 import frc.robot.constants.RobotMap;
@@ -264,6 +265,10 @@ public class Turret extends SubsystemBase {
         }
     }
 
+    public void changeAngle(Angle angle) {
+        setAngle(targetPosition.plus(angle));
+    }
+
     /**
      * gets the current angle of the turret
      *
@@ -363,6 +368,10 @@ public class Turret extends SubsystemBase {
      */
     public Command setAngleCommand(Supplier<Angle> angle) {
         return new InstantCommand(() -> setAngle(angle.get()));
+    }
+
+    public Command changeAngleCommand(Supplier<Angle> angle) {
+        return new RunCommand(() -> changeAngle(angle.get()));
     }
 
     public boolean getZeroed() {

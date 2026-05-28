@@ -260,6 +260,8 @@ public class Swerve extends TunerSwerveDrivetrain implements Subsystem {
 
     @Override
     public void periodic() {
+        DriveConstants.driveMult = LightningShuffleboard.getDouble("Demo", "Drive Multiplier", DriveConstants.driveMult);
+
         /*
          * Periodically try to apply the operator perspective.
          * If we haven't applied the operator perspective before, then we should apply it regardless of DS state.
